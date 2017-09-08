@@ -43,6 +43,8 @@ class GoodsAdminController extends BaseController
         $goodFields = new GoodFields($request);
         $validate = new Validate();
         $goodModel = $this->newGoodModel();
+        var_dump($goodFields->getAllfields());
+        die();
         $result = $validate->formValidate($app, $goodFields->getAllfields());
         if (!empty($result)) {
             $result = array_merge($goodFields->getAllfields(), ['error' => $result]);

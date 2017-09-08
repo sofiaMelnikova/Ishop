@@ -36,7 +36,7 @@
     {% if properties.color %}
     <div class="form-group">
         <label>Color</label>
-        <input class="form-control" name="color" placeholder="Enter color" value={{ color }}>
+        <input class="form-control" name="color" placeholder="Enter color" value= {% if color %} {{ color }} null {% endif %}>
     </div>
     {% endif %}
 

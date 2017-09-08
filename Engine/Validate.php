@@ -34,21 +34,21 @@ class Validate
      */
     public function formValidate (Application $app, array $values) {
         $err = '';
-        $constraint = new Assert\Collection(array(
+        $constraint = new Assert\Collection([
             'id' => new Assert\Regex(['pattern' => '/^[0-9]{0,11}$/', 'message' => 'Error: id incorrect.']),
             'kind' => new Assert\Regex(['pattern' => '/^[123]$/', 'message' => 'Error: kind incorrect.']),
-            'productName' => [new Assert\Regex(['pattern' => '/^[a-zA-Z0-9 \-]{3,30}$/', 'message' => 'Error: product`s name incorrect.']), new Assert\NotNull(['message' => 'Error: product`s name must be not null.'])],
-            'brand' => new Assert\Regex(['pattern' => '^[a-zA-Z0-9 \-]{3,30}$', 'message' => 'Error: brand incorrect.']),
-            'color' => new Assert\Regex(['pattern' => '/^[a-zA-Z \-\,]{0,30}$/', 'message' => 'Error: color incorrect.']),
-            'size' => $this->forSize($values['kind']) ,
-            'material' => new Assert\Regex(['pattern' => '/^[a-zA-Z\-]{0,30}$/', 'message' => 'Error: material incorrect.']),
-            'gender' => new Assert\Regex(['pattern' => '/^(man|woman|)$/', 'message' => 'Error: gender incorrect.']),
-            'length' => new Assert\Regex(['pattern' => '/^[1-9][0-9\.]{0,5}$/', 'message' => 'Error: length incorrect.']),
-            'width' => new Assert\Regex(['pattern' => '/^[1-9][0-9\.]{0,5}$/', 'message' => 'Error: width incorrect.']),
-            'producer' => new Assert\Regex(['pattern' => '/^[a-zA-Z \-\,]{0,30}$/', 'message' => 'Error: producer incorrect.']),
-            'count' => new Assert\NotNull(['message' => 'Error: count incorrect.']),
-            'cost' => new Assert\NotNull(['message' => 'Error: cost incorrect.'])
-        ));
+            'productName' => $this->forProductName(),
+            'brand' => $this->forBrand($values['brand']),
+            'color' => $this->forColor($values['color']),
+            'size' => $this->forSize($values['kind']),
+            'material' => $this->forMaterial($values['material']),
+            'gender' => $this->forGender($values['gender']),
+            'length' => $this->forLength($values['length']),
+            'width' => $this->forLength($values['width']),
+            'producer' => $this->forProducer($values['producer']),
+            'count' => $this->forCount(),
+            'cost' => $this->forCost()
+        ]);
         $errors = $app['validator']->validate($values, $constraint);
         if (count($errors) > 0) {
             foreach ($errors as $error) {
@@ -59,49 +59,123 @@ class Validate
     }
 
     /**
-     * @param string $kind
-     * @return Assert\Range
+     * @return array
      */
-    private function forSize (string $kind) {
+    private function forProductName () {
+        return [new Assert\NotNull(['message' => 'Error: Product`s Name incorrect.']),
+            new Assert\Type(['type' => 'string', 'message' => 'Error: Product`s Name must be string'])];
+    }
+    /**
+     * @param $kind
+     * @return Assert\NotNull|Assert\Range|Assert\Type
+     */
+    private function forSize ($kind) {
         if ($kind === '1') {
-            return new Assert\Range(['min' => 36, 'max' => 46, 'invalidMessage' => 'Shoes size mast have range in between from 36 to 46']);
+            return new Assert\Range(['min' => 36, 'max' => 46,
+                'invalidMessage' => 'Shoes size mast have range in between from 36 to 46']);
         }
         if ($kind === '2') {
-            return new Assert\Range(['min' => 38, 'max' => 56, 'invalidMessage' => 'Jacket size mast have range in between from 38 to 56']);
+            return new Assert\Range(['min' => 38, 'max' => 56,
+                'invalidMessage' => 'Jacket size mast have range in between from 38 to 56']);
         }
-//        if ($kind === '3') {
-//            return new Assert\IsNull(['message' => 'kind must be null']);
-//        }
+        if ($kind === '') {
+            return new Assert\Type(['type' => 'string']);
+        }
+        return new Assert\NotNull(['message' => 'Error: brand is empty.']);
     }
 
 
-    private function forBrand () {
+    /**
+     * @param $brand
+     * @return Assert\NotNull|Assert\Type
+     */
+    private function forBrand ($brand) {
+        if (is_null($brand)) {
+            return new Assert\NotNull(['message' => 'Error: brand is empty.']);
+        }
+        if ($brand === '') {
+            return new Assert\Type(['type' => 'string']);
+        }
+        return new Assert\Type(['type' => 'string', 'message' => 'Error: brand must be string']);
 
     }
 
-    private function forGender () {
+    /**
+     * @param $gender
+     * @return Assert\EqualTo|Assert\NotNull|Assert\Type
+     */
+    private function forGender ($gender) {
+        if (is_null($gender)) {
+            return new Assert\NotNull(['message' => 'Error: gender is empty.']);
+        }
+        if ($gender != 'man') {
+            return new Assert\EqualTo(['value' => 'woman', 'message' => 'Error: gender must be man or woman']);
+        }
+        return new Assert\Type(['type' => 'string']);
+    }
+
+    /**
+     * @param $color
+     * @return Assert\NotNull|Assert\Type
+     */
+    private function forColor ($color) {
+        if (is_null($color)) {
+            return new Assert\NotNull(['message' => 'Error: color is empty.']);
+        }
+        return new Assert\Type(['type' => 'string']);
+    }
+
+    /**
+     * @param $material
+     * @return Assert\NotNull|Assert\Type
+     */
+    private function forMaterial ($material) {
+        if (is_null($material)) {
+            return new Assert\NotNull(['message' => 'Error: material is empty.']);
+        }
+        return new Assert\Type(['type' => 'string']);
+    }
+
+    /**
+     * @param $producer
+     * @return Assert\NotNull|Assert\Type
+     */
+    private function forProducer ($producer) {
+        if (is_null($producer)) {
+            return new Assert\NotNull(['message' => 'Error: producer is empty.']);
+        }
+        return new Assert\Type(['type' => 'string']);
+    }
+
+    /**
+     * @param $lengthOrWidth
+     * @return Assert\NotNull|Assert\Type
+     */
+    private function forLength ($lengthOrWidth) {
+        if (is_null($lengthOrWidth)) {
+            return new Assert\NotNull(['message' => 'Error: length is empty.']);
+        }
+        if ($lengthOrWidth === '') {
+            return new Assert\Type(['type' => 'string']);
+        }
+        return new Assert\Type(['type' => 'int', 'message' => 'Error: brand must be int']);
 
     }
 
-    private function forColor () {
-
+    /**
+     * @return array
+     */
+    private function forCost () {
+        return [new Assert\NotNull(['message' => 'Error: Cost incorrect.']),
+            new Assert\Type(['type' => 'float', 'message' => 'Error: Cost must be float'])];
     }
 
-    private function forMaterial () {
-
+    /**
+     * @return array
+     */
+    private function forCount () {
+        return [new Assert\NotNull(['message' => 'Error: count incorrect.']),
+            new Assert\Type(['type' => 'int', 'message' => 'Error: Count must be int'])];
     }
-
-    private function forProducer () {
-
-    }
-
-    private function forLength () {
-
-    }
-
-    private function forWidth () {
-
-    }
-
 
 }
