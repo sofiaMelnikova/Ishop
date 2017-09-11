@@ -179,4 +179,24 @@ class GoodModel extends BaseModel
         return $response;
     }
 
+    /**
+     * @param string $kind
+     * @return array|null
+     */
+    public function getFieldsByKindForAddForm (string $kind) {
+        $properties = null;
+        if ($kind === 'shoes') {
+            $properties = ['size' => ['min' => 36, 'max' => 46], 'brand' => true, 'gender' => true, 'color' => true,
+                'material' => true, 'producer' => true, 'kind' => 'shoes'];
+        }
+        if ($kind === 'jacket') {
+            $properties = ['size' => ['min' => 38, 'max' => 56], 'brand' => true, 'gender' =>true, 'color' => true,
+                'material' => true, 'producer' => true, 'kind' => 'jacket'];
+        }
+        if ($kind === 'plaid') {
+            $properties = ['length' => true, 'width' => true, 'color' => true, 'material' => true, 'producer' => true, 'kind' => 'plaid'];
+        }
+        return $properties;
+    }
+
 }

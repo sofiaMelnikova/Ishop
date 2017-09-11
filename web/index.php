@@ -70,7 +70,7 @@ $app->post('/addGood', function (Request $request) use ($app) {
     if (!empty($result)) {
         return $app['twig']->render('addGood.php', $result);
     }
-    $response = Response::create('', 302, ['Location' => $_SERVER['HTTP_REFERER']]);
+    $response = Response::create('', 302, ['Location' => 'http://127.0.0.1/adminGoods']);
     return $response;
 })->before(function (Request $request) {
     $result = (new Rules())->isLoginAdmin($request);

@@ -15,22 +15,15 @@ class GoodsAdminController extends BaseController
 
     /**
      * @param Request $request
+     * @param string|null $kind
      * @return array
      */
-    public function showFormAddGood (Request $request) {
-        $properties = null;
-        $kind = $request->get('kind');
-        if ($kind === 'shoes') {
-            $properties = ['size' => ['min' => 36, 'max' => 46], 'brand' => true, 'gender' => true, 'color' => true,
-                'material' => true, 'producer' => true, 'kind' => 'shoes'];
+    public function showFormAddGood (Request $request, string $kind = null) {
+        if (empty($kind)) {
+            $kind = $request->get('kind');
         }
-        if ($kind === 'jacket') {
-            $properties = ['size' => ['min' => 38, 'max' => 56], 'brand' => true, 'gender' =>true, 'color' => true,
-                'material' => true, 'producer' => true, 'kind' => 'jacket'];
-        }
-        if ($kind === 'plaid') {
-            $properties = ['sizeParams' => true, 'color' => true, 'material' => true, 'producer' => true, 'kind' => 'plaid'];
-        }
+        $goodModel = $this->newGoodModel();
+        $properties = $goodModel->getFieldsByKindForAddForm($kind);
         return ['properties' => $properties];
     }
 
@@ -43,12 +36,11 @@ class GoodsAdminController extends BaseController
         $goodFields = new GoodFields($request);
         $validate = new Validate();
         $goodModel = $this->newGoodModel();
-        var_dump($goodFields->getAllfields());
-        die();
         $result = $validate->formValidate($app, $goodFields->getAllfields());
         if (!empty($result)) {
-            $result = array_merge($goodFields->getAllfields(), ['error' => $result]);
-            return $result;
+            $properties = $goodModel->getFieldsByKindForAddForm($goodFields->getKind());
+            $allFields = $goodFields->getAllfields();
+            return ['properties' => $properties, 'product' => $allFields, 'error' => $result];
         }
         $file = $request->files->get('photo');
         $filePath = 'pictures/addPhoto.png';

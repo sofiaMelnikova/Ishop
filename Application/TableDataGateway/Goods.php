@@ -26,8 +26,11 @@ class Goods
         $connection = $this->dataBase->getConnection();
         $connection->beginTransaction();
         try {
+            $query = "SELECT `kinds`.`id` FROM `kinds` WHERE `kinds`.`kinds_value` = :kind;";
+            $forExecute = [':kind' => $goodFields->getKind()];
+            $kind = $this->dataBase->getData($query, $forExecute, false);
             $query = "INSERT INTO `stoke` (`kinds_id`, `count`, `cost`, `picture`, `product_name`) VALUES (:kindsId, :count, :cost, :picture, :product_name);";
-            $forExecute = [':kindsId' => $goodFields->getKind(), ':count' => $goodFields->getCount(),
+            $forExecute = [':kindsId' => $kind['id'], ':count' => $goodFields->getCount(),
                 ':cost' => $goodFields->getCost(), ':picture' => $picture, ':product_name' => $goodFields->getProductName()];
             $this->stokeId = $this->dataBase->changeData($query, $forExecute);
 

@@ -36,7 +36,7 @@ class Validate
         $err = '';
         $constraint = new Assert\Collection([
             'id' => new Assert\Regex(['pattern' => '/^[0-9]{0,11}$/', 'message' => 'Error: id incorrect.']),
-            'kind' => new Assert\Regex(['pattern' => '/^[123]$/', 'message' => 'Error: kind incorrect.']),
+            'kind' => $this->forKind(),
             'productName' => $this->forProductName(),
             'brand' => $this->forBrand($values['brand']),
             'color' => $this->forColor($values['color']),
@@ -59,6 +59,13 @@ class Validate
     }
 
     /**
+     * @return Assert\NotNull
+     */
+    private function forKind () {
+        return new Assert\NotNull(['message' => 'Error: kind is empty.']);
+    }
+
+    /**
      * @return array
      */
     private function forProductName () {
@@ -70,18 +77,18 @@ class Validate
      * @return Assert\NotNull|Assert\Range|Assert\Type
      */
     private function forSize ($kind) {
-        if ($kind === '1') {
+        if ($kind === 'shoes') {
             return new Assert\Range(['min' => 36, 'max' => 46,
                 'invalidMessage' => 'Shoes size mast have range in between from 36 to 46']);
         }
-        if ($kind === '2') {
+        if ($kind === 'jacket') {
             return new Assert\Range(['min' => 38, 'max' => 56,
                 'invalidMessage' => 'Jacket size mast have range in between from 38 to 56']);
         }
-        if ($kind === '') {
+        if (($kind === 'plaid') || ($kind === '')) {
             return new Assert\Type(['type' => 'string']);
         }
-        return new Assert\NotNull(['message' => 'Error: brand is empty.']);
+        return new Assert\NotNull(['message' => 'Error: size is empty.']);
     }
 
 
@@ -108,10 +115,12 @@ class Validate
         if (is_null($gender)) {
             return new Assert\NotNull(['message' => 'Error: gender is empty.']);
         }
+        if ($gender === '') {
+            return new Assert\Type(['type' => 'string']);
+        }
         if ($gender != 'man') {
             return new Assert\EqualTo(['value' => 'woman', 'message' => 'Error: gender must be man or woman']);
         }
-        return new Assert\Type(['type' => 'string']);
     }
 
     /**
@@ -158,7 +167,7 @@ class Validate
         if ($lengthOrWidth === '') {
             return new Assert\Type(['type' => 'string']);
         }
-        return new Assert\Type(['type' => 'int', 'message' => 'Error: brand must be int']);
+        return new Assert\Type(['type' => 'numeric', 'message' => 'Error: length must be number']);
 
     }
 
@@ -167,7 +176,7 @@ class Validate
      */
     private function forCost () {
         return [new Assert\NotNull(['message' => 'Error: Cost incorrect.']),
-            new Assert\Type(['type' => 'float', 'message' => 'Error: Cost must be float'])];
+            new Assert\Type(['type' => 'numeric', 'message' => 'Error: Cost must be number'])];
     }
 
     /**
@@ -175,7 +184,7 @@ class Validate
      */
     private function forCount () {
         return [new Assert\NotNull(['message' => 'Error: count incorrect.']),
-            new Assert\Type(['type' => 'int', 'message' => 'Error: Count must be int'])];
+            new Assert\Type(['type' => 'numeric', 'message' => 'Error: Count must be number'])];
     }
 
 }
