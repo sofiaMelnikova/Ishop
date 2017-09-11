@@ -158,7 +158,7 @@ class Goods
             $query = "UPDATE `stoke` SET `stoke`.`kinds_id` = :kind, `stoke`.`count` = :count, `stoke`.`cost` = :cost, 
                  `stoke`.`product_name` = :productName WHERE `stoke`.`id` = :id";
             $forExecute = [':kind' => $product['kind'], ':count' => $product['count'], ':cost' => $product['cost'],
-                ':productName' => $product['productName'], ':id' => $product['id']];
+                ':productName' => $product['productName'], ':id' => $product['stokeId']];
             if (!empty($product['picture'])) {
                 $query = "UPDATE `stoke` SET `stoke`.`kinds_id` = :kind, `stoke`.`count` = :count, `stoke`.`cost` = :cost, 
                   `stoke`.`picture` = :picture, `stoke`.`product_name` = :productName WHERE `stoke`.`id` = :id";
@@ -185,7 +185,7 @@ class Goods
         if (!empty($product[$nameProperty])) {
             $query = "UPDATE `properties` SET `properties`.`value` = :newValue 
                       WHERE `properties`.`key` = :nameProperty AND `properties`.`stoke_id` = :stokeId;";
-            $forExecute = [':newValue' => $product[$nameProperty], ':nameProperty' => $nameProperty, ':stokeId' => $product['id']];
+            $forExecute = [':newValue' => $product[$nameProperty], ':nameProperty' => $nameProperty, ':stokeId' => $product['stokeId']];
             $this->dataBase->changeData($query, $forExecute);
         }
         return $this;
@@ -207,6 +207,18 @@ class Goods
             $this->dataBase->changeData($query, $forExecute);
         }
         $connection->commit();
+    }
+
+    /**
+     * @param int $userId
+     * @return array|mixed
+     */
+    public function getOrderByUserId (int $userId) {
+        $query = "SELECT `stoke`.`product_name`, `stoke`.`picture`, `stoke`.`cost`, `orders`.`count`, 
+                    `orders`.`summ_cost`, `orders`.`date` FROM `stoke`, `orders`
+                    WHERE `orders`.`users_id` = :id AND `stoke`.`id` = `orders`.`stoke_id`;";
+        $forExecute = [':id' => $userId];
+        return $this->dataBase->getData($query, $forExecute);
     }
 
 }

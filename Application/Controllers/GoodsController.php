@@ -112,7 +112,7 @@ class GoodsController extends BaseController
      */
     public function createOrderAction (Request $request, Response $response) {
         $loginModel = new LoginModel();
-        $userId = intval($loginModel->isUserLogin($request));
+        $userId = $loginModel->isUserLogin($request);
         $goodModel= $this->newGoodModel();
         $basket = $goodModel->getContentFromBasket($request);
         $goodModel = $this->newGoodModel();

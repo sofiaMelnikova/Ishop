@@ -164,6 +164,7 @@ class GoodModel extends BaseModel
     public function deleteProductFromBasket (int $stokeId = null, Response $response, Request $request = null) {
         if (empty($stokeId)) {
             $response->headers->clearCookie('products');
+            return $response;
         }
 
         $products = ($request->cookies->all())['products'];

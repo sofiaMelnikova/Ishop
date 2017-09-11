@@ -35,7 +35,7 @@ class Validate
     public function formValidate (Application $app, array $values) {
         $err = '';
         $constraint = new Assert\Collection([
-            'id' => new Assert\Regex(['pattern' => '/^[0-9]{0,11}$/', 'message' => 'Error: id incorrect.']),
+            'stokeId' => new Assert\Regex(['pattern' => '/^[0-9]{0,11}$/', 'message' => 'Error: id incorrect.']),
             'kind' => $this->forKind(),
             'productName' => $this->forProductName(),
             'brand' => $this->forBrand($values['brand']),

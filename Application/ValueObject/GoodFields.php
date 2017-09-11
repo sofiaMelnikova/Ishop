@@ -10,14 +10,14 @@ class GoodFields
     private $stokeId = null;
     private $kind = null;
     private $productName = null;
-    private $brand = null; // new
+    private $brand = null;
     private $color =null;
     private $size = null;
     private $material = null;
     private $gender = null;
-    private $length = null; // new
-    private $width = null; // new
-    private $producer = null; // new
+    private $length = null;
+    private $width = null;
+    private $producer = null;
     private $count = null;
     private $cost = null;
 
@@ -26,7 +26,7 @@ class GoodFields
      * @param Request $request
      */
     public function __construct(Request $request) {
-        $keys = ['id', 'kind', 'productName', 'brand', 'color', 'size', 'material', 'gender', 'length', 'width', 'producer', 'count' ,'cost'];
+        $keys = ['stokeId', 'kind', 'productName', 'brand', 'color', 'size', 'material', 'gender', 'length', 'width', 'producer', 'count' ,'cost'];
         foreach ($keys as $key) {
             $this->$key = $this->forConstruct($request, $key);
         }
@@ -53,7 +53,7 @@ class GoodFields
      * @return array
      */
     public  function getAllfields () {
-        return ['id' => $this->stokeId,
+        return ['stokeId' => $this->stokeId,
             'kind' => $this->kind,
             'productName' => $this->productName,
             'brand' => $this->brand,

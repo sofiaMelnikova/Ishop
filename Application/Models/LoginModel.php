@@ -2,10 +2,12 @@
 
 namespace Application\Models;
 
+use ClassesWithParents\D;
 use Engine\DbQuery;
 use Application\TableDataGateway\Login;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
+use Application\Helper;
 class LoginModel
 {
     /**
@@ -17,13 +19,13 @@ class LoginModel
     }
 
     /**
-     * @param int $userId
-     * @return bool
+     * @param string $token
+     * @return bool|int
      */
-    public function haveUserCookie (int $userId) {
-        $result = ($this->newLogin(new DbQuery()))->haveUserCookie($userId);
+    public function getUserIdByToket (string $token) {
+        $result = ($this->newLogin(new DbQuery()))->getUserIdByToken($token);
         if ($result) {
-            return true;
+            return intval($result['id']);
         }
         return false;
     }
@@ -31,7 +33,7 @@ class LoginModel
     /**
      * @param string $login
      * @param string $password
-     * @return bool
+     * @return bool|int
      */
     public function isUserExist (string $login, string $password) {
         $user = ($this->newLogin(new DbQuery()))->isUserExist($login);
@@ -40,7 +42,7 @@ class LoginModel
         }
 
         if (password_verify($password, $user['password_hash'])) {
-            return $user['id'];
+            return intval($user['id']);
         }
         return false;
     }
@@ -53,9 +55,9 @@ class LoginModel
         if (!key_exists('user', ($request->cookies->all()))) {
             return false;
         }
-        $userId = intval(($request->cookies->all())['user']);
-        $result = $this->haveUserCookie($userId);
-        if ($result) {
+        $token = ($request->cookies->all())['user'];
+        $userId = $this->getUserIdByToket($token);
+        if ($userId) {
             return $userId;
         }
         return false;
@@ -75,12 +77,12 @@ class LoginModel
     }
 
     /**
-     * @param string $userId
+     * @param string $token
      * @param Response $response
      * @return Response
      */
-    public function createLoginCookie(string $userId, Response $response) {
-        $cookie = new \Symfony\Component\HttpFoundation\Cookie('user', $userId, strtotime('now + 60 minutes'));
+    public function createLoginCookie(string $token, Response $response) {
+        $cookie = new \Symfony\Component\HttpFoundation\Cookie('user', $token, strtotime('now + 60 minutes'));
         $response->headers->setCookie($cookie);
         $response->send();
         return $response;
@@ -93,5 +95,30 @@ class LoginModel
     public function getLogin (int $userId) {
         $result = ($this->newLogin(new DbQuery))->getLogin($userId);
         return $result['login'];
+    }
+
+    /**
+     * @return bool|string
+     */
+    public function createTokenForUser () {
+        $time = 1;
+        while ($time <= 3) {
+            $helper = new Helper();
+            $randomString = $helper->generateRandomString();
+            $login = $this->newLogin(new DbQuery);
+            if (!($login->getUserIdByToken($randomString))) {
+                return $randomString;
+            }
+            $time++;
+        }
+        return false;
+    }
+
+    /**
+     * @param string $token
+     * @param int $userId
+     */
+    public function addTokenForUser (string $token, int $userId) {
+        ($this->newLogin(new DbQuery()))->addTokenForUser($token, $userId);
     }
 }

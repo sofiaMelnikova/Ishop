@@ -55,13 +55,15 @@ class RegistrationController extends BaseController
         }
 
         $registrationModel = new RegistrationModel(new DbQuery());
-        $result = $registrationModel->saveNewUser($email, $passwordHash);
-        if ($result === false) {
+        $userId = $registrationModel->saveNewUser($email, $passwordHash);
+        if ($userId === false) {
             return ['error' => 'Error: new user was not created.'];
         }
 
         $response = Response::create('', 302, ['Location' => 'http://127.0.0.1/catalogue']);
-        $loginModel->createLoginCookie($result, $response);
+        $token = $loginModel->createTokenForUser();
+        $loginModel->addTokenForUser($token, $userId);
+        $response = $loginModel->createLoginCookie($token, $response);
         return $response;
     }
 

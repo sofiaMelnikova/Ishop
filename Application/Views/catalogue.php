@@ -26,6 +26,7 @@
         </ul>
         <ul class="nav navbar-nav navbar-right">
             {% if login %}
+            <li><a href="/showBasket">Basket <span class="badge">{% if countProducts %}{{countProducts}}{% else %}0{% endif %}</span></a></li>
             <li><a href="/logout" type="button" class="btn btn-info" ">Logout: {{login}}</a></li>
             {% else %}
             <li><a href="/showBasket">Basket <span class="badge">{% if countProducts %}{{countProducts}}{% else %}0{% endif %}</span></a></li>

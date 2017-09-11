@@ -1,10 +1,4 @@
 <?php
-/**
- * Created by PhpStorm.
- * User: smelnikova
- * Date: 20.08.17
- * Time: 14:50
- */
 
 namespace Application\Controllers;
 
@@ -22,12 +16,14 @@ class LoginController extends BaseController
         $loginModel = $this->newLoginModel();
         $login = $request->get('login');
         $password = $request->get('password');
-        $result = $loginModel->isUserExist($login, $password);
-        if (!$result) {
+        $userId = $loginModel->isUserExist($login, $password);
+        if (!$userId) {
             return ['error' => 'Error: This user is not exist. Check out your login and password'];
         }
         $response = Response::create('', 302, ['Location' => 'http://127.0.0.1/catalogue']);
-        $loginModel->createLoginCookie($result, $response);
+        $token = $loginModel->createTokenForUser();
+        $loginModel->addTokenForUser($token, $userId);
+        $response = $loginModel->createLoginCookie($token, $response);
         return $response;
     }
 

@@ -14,7 +14,7 @@
 
         <div class="panel panel-primary">
             <div class="panel-heading">
-                <h3 class="panel-title">Product name</h3>
+                <h3 class="panel-title">Product`s name</h3>
             </div>
             <div class="panel-body">{{product.product_name}}</div>
         </div>
@@ -32,6 +32,15 @@
                 <h3 class="panel-title">Gender</h3>
             </div>
             <div class="panel-body">{{product.gender}}</div>
+        </div>
+        {% endif %}
+
+        {% if product.brand %}
+        <div class="panel panel-primary">
+            <div class="panel-heading">
+                <h3 class="panel-title">Gender</h3>
+            </div>
+            <div class="panel-body">{{product.brand}}</div>
         </div>
         {% endif %}
 
@@ -53,12 +62,39 @@
         </div>
         {% endif %}
 
+        {% if product.length %}
+        <div class="panel panel-primary">
+            <div class="panel-heading">
+                <h3 class="panel-title">Material</h3>
+            </div>
+            <div class="panel-body">{{product.material}}</div>
+        </div>
+        {% endif %}
+
+        {% if product.width %}
+        <div class="panel panel-primary">
+            <div class="panel-heading">
+                <h3 class="panel-title">Material</h3>
+            </div>
+            <div class="panel-body">{{product.material}}</div>
+        </div>
+        {% endif %}
+
         {% if product.size %}
         <div class="panel panel-primary">
             <div class="panel-heading">
                 <h3 class="panel-title">Size</h3>
             </div>
             <div class="panel-body">{{product.size}}</div>
+        </div>
+        {% endif %}
+
+        {% if product.producer %}
+        <div class="panel panel-primary">
+            <div class="panel-heading">
+                <h3 class="panel-title">Size</h3>
+            </div>
+            <div class="panel-body">{{product.producer}}</div>
         </div>
         {% endif %}
 

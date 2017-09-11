@@ -16,16 +16,6 @@ class Login
     }
 
     /**
-     * @param int $userId
-     * @return array|mixed
-     */
-    public function haveUserCookie (int $userId) {
-        $query = "SELECT * FROM `users` WHERE `users`.`id` = :userId;";
-        $forExecute = [':userId' => $userId];
-        return $this->dataBase->getData($query, $forExecute, false);
-    }
-
-    /**
      * @param string $login
      * @return array|mixed
      */
@@ -54,5 +44,34 @@ class Login
         $forExecute = [':userId' => $userId];
         return $this->dataBase->getData($query, $forExecute, false);
     }
+
+    /**
+     * @param string $token
+     * @return array|mixed
+     */
+    public function getUserIdByToken (string $token) {
+        $query = "SELECT `users`.`id` FROM `users` WHERE `users`.`token` = :token;";
+        $forExecute = [':token' => $token];
+        return $this->dataBase->getData($query, $forExecute, false);
+    }
+
+    /**
+     * @param string $token
+     * @param int $userId
+     */
+    public function addTokenForUser (string $token, int $userId) {
+        $query = "UPDATE `users` SET `users`.`token` = :token WHERE `users`.`id` = :id;";
+        $forExecute = [':token' => $token, ':id' => $userId];
+        $this->dataBase->changeData($query, $forExecute);
+    }
+
+//    /**
+//     * @param string $token
+//     */
+//    public function deleteTokenFromUser (string $token) {
+//        $query = "UPDATE `users` SET `users`.`token` = NULL WHERE `users`.`token` = :token;";
+//        $forExecute = [':token' => $token];
+//        $this->dataBase->changeData($query, $forExecute);
+//    }
 
 }

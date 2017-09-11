@@ -158,8 +158,15 @@ $app->get('/logout', function () use ($app) {
     return (new LoginController())->logoutAction($response);
 });
 
-$app->get('/smth', function (Request $request) use ($app){
-    return $app['twig']->render('basket.php');
+$app->get('/historyOfOrders', function () use ($app) {
+    return $app['twig']->render('historyOfOrders.php');
+});
+
+$app->get('/test', function (Request $request) use ($app){
+    $newLogin = new \Application\TableDataGateway\Login(new \Engine\DbQuery());
+    $loginModel = new \Application\Models\LoginModel();
+    var_dump($loginModel->createTokenForUser());
+    return 'good';
 });
 
 
