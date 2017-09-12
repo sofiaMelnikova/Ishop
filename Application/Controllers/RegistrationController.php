@@ -40,6 +40,7 @@ class RegistrationController extends BaseController
 
         $email = $request->get('email');
         $passwordHash = password_hash($request->get('password'), PASSWORD_BCRYPT);
+        $phone = $request->get('phone');
 
         $registrationModel = $this->newRegistrationMode();
         $isUserExist = $registrationModel->isLoginExist($email);
@@ -54,15 +55,20 @@ class RegistrationController extends BaseController
             return ['error' => 'Error: Login is not corrected.'];
         }
 
+        if (!is_numeric($phone) || (strlen($phone) != 11)) {
+            return ['error' => 'Error: phone is not corrected. '];
+        }
+
         $registrationModel = new RegistrationModel(new DbQuery());
-        $userId = $registrationModel->saveNewUser($email, $passwordHash);
+        $userId = $registrationModel->saveNewUser($email, $phone, $passwordHash);
         if ($userId === false) {
             return ['error' => 'Error: new user was not created.'];
         }
 
         $response = Response::create('', 302, ['Location' => 'http://127.0.0.1/catalogue']);
         $token = $loginModel->createTokenForUser();
-        $loginModel->addTokenForUser($token, $userId);
+        $endTokenTime = date("Y-m-d H:i:s", strtotime('now + 60 minutes'));
+        $loginModel->addTokenForUser($token, $endTokenTime, $userId);
         $response = $loginModel->createLoginCookie($token, $response);
         return $response;
     }

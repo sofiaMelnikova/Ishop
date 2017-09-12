@@ -29,7 +29,8 @@ class Goods
             $query = "SELECT `kinds`.`id` FROM `kinds` WHERE `kinds`.`kinds_value` = :kind;";
             $forExecute = [':kind' => $goodFields->getKind()];
             $kind = $this->dataBase->getData($query, $forExecute, false);
-            $query = "INSERT INTO `stoke` (`kinds_id`, `count`, `cost`, `picture`, `product_name`) VALUES (:kindsId, :count, :cost, :picture, :product_name);";
+            $query = "INSERT INTO `stoke` (`kinds_id`, `count`, `cost`, `picture`, `product_name`)
+                      VALUES (:kindsId, :count, :cost, :picture, :product_name);";
             $forExecute = [':kindsId' => $kind['id'], ':count' => $goodFields->getCount(),
                 ':cost' => $goodFields->getCost(), ':picture' => $picture, ':product_name' => $goodFields->getProductName()];
             $this->stokeId = $this->dataBase->changeData($query, $forExecute);
@@ -185,7 +186,8 @@ class Goods
         if (!empty($product[$nameProperty])) {
             $query = "UPDATE `properties` SET `properties`.`value` = :newValue 
                       WHERE `properties`.`key` = :nameProperty AND `properties`.`stoke_id` = :stokeId;";
-            $forExecute = [':newValue' => $product[$nameProperty], ':nameProperty' => $nameProperty, ':stokeId' => $product['stokeId']];
+            $forExecute = [':newValue' => $product[$nameProperty], ':nameProperty' => $nameProperty,
+                            ':stokeId' => $product['stokeId']];
             $this->dataBase->changeData($query, $forExecute);
         }
         return $this;
@@ -194,16 +196,19 @@ class Goods
     /**
      * @param int $userId
      * @param $basket
+     * @param string $numberOrder
+     * @param int $takeToBasket
      */
-    public function createNewOrder (int $userId, $basket) {
+    public function createNewOrder (int $userId, $basket, string $numberOrder, int $takeToBasket = 1) {
         $date = date("Y-m-d H:i");
         $connection = $this->dataBase->getConnection();
         $connection->beginTransaction();
         foreach ($basket as $value) {
-            $query = "INSERT INTO `orders` (`orders`.`users_id`, `orders`.`stoke_id`, `orders`.`count`, `orders`.`summ_cost`,
-                  `orders`.`date`) VALUES (:userId, :stokeId, :count, :sumCost, :date);";
+            $query = "INSERT INTO `orders` (`orders`.`users_id`, `orders`.`stoke_id`, `orders`.`count`, 
+                      `orders`.`summ_cost`, `orders`.`date`, `orders`.`basket`, `orders`.`number_order`)
+                      VALUES (:userId, :stokeId, :count, :sumCost, :date, :basket, :numberOrder);";
             $forExecute = [':userId' => $userId, ':stokeId' => $value['id'], ':count' => $value['countInBasket'],
-                ':sumCost' => $value['sum'], ':date' => $date];
+                ':sumCost' => $value['sum'], ':date' => $date, ':basket' => $takeToBasket, ':numberOrder' => $numberOrder];
             $this->dataBase->changeData($query, $forExecute);
         }
         $connection->commit();
@@ -219,6 +224,22 @@ class Goods
                     WHERE `orders`.`users_id` = :id AND `stoke`.`id` = `orders`.`stoke_id`;";
         $forExecute = [':id' => $userId];
         return $this->dataBase->getData($query, $forExecute);
+    }
+
+    /**
+     * @param string $numberOrder
+     * @return array|mixed
+     */
+    public function getOrderByOrderNumber (string $numberOrder) {
+        $query = "SELECT `stoke`.`product_name`, `stoke`.`picture`, `stoke`.`cost`, `orders`.`count`, 
+                    `orders`.`summ_cost`, `orders`.`date` FROM `stoke`, `orders`
+                    WHERE `orders`.`number_order` = :numberOrder AND `stoke`.`id` = `orders`.`stoke_id`;";
+        $forExecute = ['numberOrder' => $numberOrder];
+        return $this->dataBase->getData($query, $forExecute);
+    }
+
+    public function changeFlagBasket () {
+
     }
 
 }

@@ -22,7 +22,8 @@ class LoginController extends BaseController
         }
         $response = Response::create('', 302, ['Location' => 'http://127.0.0.1/catalogue']);
         $token = $loginModel->createTokenForUser();
-        $loginModel->addTokenForUser($token, $userId);
+        $endTokenTime = date("Y-m-d H:i:s", strtotime('now + 60 minutes'));
+        $loginModel->addTokenForUser($token, $endTokenTime, $userId);
         $response = $loginModel->createLoginCookie($token, $response);
         return $response;
     }
@@ -31,7 +32,10 @@ class LoginController extends BaseController
      * @param Response $response
      * @return Response
      */
-    public function logoutAction (Response $response) {
+    public function logoutAction (Response $response, Request $request) {
+        $token = $request->cookies->all()['user'];
+        $loginModel = $this->newLoginModel();
+        $loginModel->sendNowTimeForToken($token);
         $response->headers->clearCookie('user');
         return $response;
     }

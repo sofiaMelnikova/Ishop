@@ -17,12 +17,14 @@ class Registration
 
     /**
      * @param string $login
+     * @param string $phone
      * @param string $passwordHash
      * @return bool|string
      */
-    public function saveNewUser (string $login, string $passwordHash) {
-        $query = "INSERT INTO `Ishop`.`users` (`login`, `password_hash`) VALUES (:login, :passwordHash)";
+    public function saveNewUser (string $login, string $phone, string $passwordHash) {
+        $query = "INSERT INTO `Ishop`.`users` (`login`, `phone`, `password_hash`) VALUES (:login, :phone, :passwordHash)";
         $forExecute = ['login' => $login,
+            ':phone' => $phone,
             'passwordHash' => $passwordHash];
         $result = $this->dataBase->changeData($query, $forExecute);
         return $result;

@@ -50,28 +50,31 @@ class Login
      * @return array|mixed
      */
     public function getUserIdByToken (string $token) {
-        $query = "SELECT `users`.`id` FROM `users` WHERE `users`.`token` = :token;";
-        $forExecute = [':token' => $token];
+        $now = date("Y-m-d H:i:s", strtotime('now'));
+        $query = "SELECT `users`.`id` FROM `users` WHERE `users`.`token` = :token AND `users`.`token_end` > :now;";
+        $forExecute = [':token' => $token, ':now' => $now];
         return $this->dataBase->getData($query, $forExecute, false);
     }
 
     /**
      * @param string $token
+     * @param string $endTimeToken
      * @param int $userId
      */
-    public function addTokenForUser (string $token, int $userId) {
-        $query = "UPDATE `users` SET `users`.`token` = :token WHERE `users`.`id` = :id;";
-        $forExecute = [':token' => $token, ':id' => $userId];
+    public function addTokenForUser (string $token, string $endTimeToken, int $userId) {
+        $query = "UPDATE `users` SET `users`.`token` = :token, `users`.`token_end` = :endTime WHERE `users`.`id` = :id;";
+        $forExecute = [':token' => $token, ':endTime' => $endTimeToken, ':id' => $userId];
         $this->dataBase->changeData($query, $forExecute);
     }
 
-//    /**
-//     * @param string $token
-//     */
-//    public function deleteTokenFromUser (string $token) {
-//        $query = "UPDATE `users` SET `users`.`token` = NULL WHERE `users`.`token` = :token;";
-//        $forExecute = [':token' => $token];
-//        $this->dataBase->changeData($query, $forExecute);
-//    }
+    /**
+     * @param string $token
+     * @param string $time
+     */
+    public function updateTimeForToken (string $token, string $time) {
+        $query = "UPDATE `users` SET `users`.`token_end` = :newTime WHERE `users`.`token` = :token;";
+        $forExecute = [':newTime' => $time, ':token' => $token];
+        $this->dataBase->changeData($query, $forExecute);
+    }
 
 }

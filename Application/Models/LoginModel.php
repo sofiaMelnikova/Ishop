@@ -116,9 +116,18 @@ class LoginModel
 
     /**
      * @param string $token
+     * @param string $endTokenTime
      * @param int $userId
      */
-    public function addTokenForUser (string $token, int $userId) {
-        ($this->newLogin(new DbQuery()))->addTokenForUser($token, $userId);
+    public function addTokenForUser (string $token, string $endTokenTime, int $userId) {
+        ($this->newLogin(new DbQuery()))->addTokenForUser($token, $endTokenTime, $userId);
+    }
+
+    /**
+     * @param string $token
+     */
+    public function sendNowTimeForToken (string $token) {
+        $nowTime = date("Y-m-d H:i:s", strtotime("now"));
+        ($this->newLogin(new DbQuery()))->updateTimeForToken($token, $nowTime);
     }
 }

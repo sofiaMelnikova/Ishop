@@ -13,13 +13,15 @@ class RegistrationModel
     public function newRegistration (DbQuery $dbQuery) {
         return new Registration($dbQuery);
     }
+
     /**
      * @param string $login
+     * @param string $phone
      * @param string $passwordHash
      * @return bool|string
      */
-    public function saveNewUser (string $login, string $passwordHash) {
-        return ($this->newRegistration(new DbQuery()))->saveNewUser($login, $passwordHash);
+    public function saveNewUser (string $login, string $phone, string $passwordHash) {
+        return ($this->newRegistration(new DbQuery()))->saveNewUser($login, $phone, $passwordHash);
     }
 
 

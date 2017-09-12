@@ -9,6 +9,7 @@ use Symfony\Component\HttpFoundation\File\UploadedFile;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpFoundation\Cookie;
+use Application\Helper;
 
 class GoodModel extends BaseModel
 {
@@ -96,9 +97,41 @@ class GoodModel extends BaseModel
     /**
      * @param int $userId
      * @param $basket
+     * @param int $takeToBasket
+     * @return bool
      */
-    public function createNewOrder (int $userId, $basket) {
-        $this->newGoods()->createNewOrder($userId, $basket);
+    public function createNewOrder (int $userId, $basket, int $takeToBasket = 0) {
+        $numberOrder = $this->getNewOrderNumber();
+        if (!$numberOrder) {
+            return false;
+        }
+        $this->newGoods()->createNewOrder($userId, $basket, $numberOrder, $takeToBasket);
+    }
+
+    public function addNewProductInDbBasket () {
+        $numberOrder = $this->getNewOrderNumber();
+        if (!$numberOrder) {
+            return false;
+        }
+        // exist(cookie['numberOrder']); if exist: get numberOrder; else generate new ckookie and get this number
+    }
+
+    /**
+     * @return bool|string
+     */
+    private function getNewOrderNumber () {
+        $helper = new Helper();
+        $numberOrder = $helper->generateRandomString();
+        $order = $this->newGoods()->getOrderByOrderNumber($numberOrder);
+        $flag = 1;
+        while (!empty($order) || $flag <= 5) {
+            $numberOrder = $helper->generateRandomString();
+            $flag++;
+        }
+        if (!empty($order) && $flag === 6) {
+            return false;
+        }
+        return $numberOrder;
     }
 
     /**

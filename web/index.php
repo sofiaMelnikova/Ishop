@@ -153,9 +153,9 @@ $app->get('/createOrder', function (Request $request) use ($app) {
 
 });
 
-$app->get('/logout', function () use ($app) {
+$app->get('/logout', function (Request $request) use ($app) {
     $response = Response::create('', 302, ['Location' => 'http://127.0.0.1/login']);
-    return (new LoginController())->logoutAction($response);
+    return (new LoginController())->logoutAction($response, $request);
 });
 
 $app->get('/historyOfOrders', function () use ($app) {
@@ -163,9 +163,9 @@ $app->get('/historyOfOrders', function () use ($app) {
 });
 
 $app->get('/test', function (Request $request) use ($app){
-    $newLogin = new \Application\TableDataGateway\Login(new \Engine\DbQuery());
-    $loginModel = new \Application\Models\LoginModel();
-    var_dump($loginModel->createTokenForUser());
+    $newGoods = new \Application\TableDataGateway\Goods(new \Engine\DbQuery());
+    $result = $newGoods->getOrderByOrderNumber('hfghfghg');
+    var_dump(empty($result));
     return 'good';
 });
 

@@ -73,6 +73,23 @@ class GoodsController extends BaseController
     }
 
     /**
+     * @param Request $request
+     * @param Response $response
+     * @return bool|Response
+     */
+    public function NEWTakeToTheBasketAction (Request $request, Response $response) {
+        $goodModel = $this->newGoodModel();
+        $loginModel = new LoginModel();
+        $userId = $loginModel->isUserLogin($request);
+        if (!$userId) {
+            $stokeId = intval($request->get('id'));
+            return $goodModel->addProductInBasket($stokeId, $response, $request);
+            // return false; // Error: user is not login return loginPage
+        }
+
+    }
+
+    /**
      * @param Response $response
      * @param Request $request
      * @return Response
@@ -113,6 +130,10 @@ class GoodsController extends BaseController
     public function createOrderAction (Request $request, Response $response) {
         $loginModel = new LoginModel();
         $userId = $loginModel->isUserLogin($request);
+        if ($userId) { // if user login
+
+        }
+        // user enter phone number
         $goodModel= $this->newGoodModel();
         $basket = $goodModel->getContentFromBasket($request);
         $goodModel = $this->newGoodModel();
