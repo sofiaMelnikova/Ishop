@@ -83,7 +83,7 @@ class GoodsController extends BaseController
         $userId = $loginModel->isUserLogin($request);
         if (!$userId) {
             $stokeId = intval($request->get('id'));
-            return $goodModel->addProductInBasket($stokeId, $response, $request);
+            return $goodModel->addProductInBasket($stokeId, $response, $request, false);
             // return false; // Error: user is not login return loginPage
         }
 

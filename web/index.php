@@ -164,8 +164,8 @@ $app->get('/historyOfOrders', function () use ($app) {
 
 $app->get('/test', function (Request $request) use ($app){
     $newGoods = new \Application\TableDataGateway\Goods(new \Engine\DbQuery());
-    $result = $newGoods->getOrderByOrderNumber('hfghfghg');
-    var_dump(empty($result));
+    $result = $newGoods->getCountProductsInBasket(1);
+    var_dump($result['COUNT(*)']);
     return 'good';
 });
 

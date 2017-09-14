@@ -90,55 +90,36 @@ class GoodModel extends BaseModel
      * @param Request $request
      * @return array
      */
-    public function getContentFromBasket (Request $request) {
+    public function getContentFromBasket (Request $request) { // TODO: rewrite
         return (new GoodsController())->showBasketAction($request);
+    }
+
+    public function NEWgetContentFromBasket () {
+
+    }
+
+
+
+    /**
+     * @param int $numberOrder
+     */
+    public function executedOrderForLoginUser (int $numberOrder) {
+        $this->newGoods()->formBusketToExecuted($numberOrder);
     }
 
     /**
      * @param int $userId
-     * @param $basket
-     * @param int $takeToBasket
-     * @return bool
+     * @param array $basket
      */
-    public function createNewOrder (int $userId, $basket, int $takeToBasket = 0) {
-        $numberOrder = $this->getNewOrderNumber();
-        if (!$numberOrder) {
-            return false;
-        }
-        $this->newGoods()->createNewOrder($userId, $basket, $numberOrder, $takeToBasket);
-    }
-
-    public function addNewProductInDbBasket () {
-        $numberOrder = $this->getNewOrderNumber();
-        if (!$numberOrder) {
-            return false;
-        }
-        // exist(cookie['numberOrder']); if exist: get numberOrder; else generate new ckookie and get this number
-    }
-
-    /**
-     * @return bool|string
-     */
-    private function getNewOrderNumber () {
-        $helper = new Helper();
-        $numberOrder = $helper->generateRandomString();
-        $order = $this->newGoods()->getOrderByOrderNumber($numberOrder);
-        $flag = 1;
-        while (!empty($order) || $flag <= 5) {
-            $numberOrder = $helper->generateRandomString();
-            $flag++;
-        }
-        if (!empty($order) && $flag === 6) {
-            return false;
-        }
-        return $numberOrder;
+    public function executedOrderForLogoutUser (int $userId, array $basket) {
+        $this->newGoods()->createAndExecuteNewOrder($userId, $basket);
     }
 
     /**
      * @param Request $request
      * @return int
      */
-    public function countProducts (Request $request) {
+    public function countProductsInBasketForLogoutUser (Request $request) {
         if (!key_exists('products', ($request->cookies->all()))) {;
             return 0;
         }
@@ -146,30 +127,50 @@ class GoodModel extends BaseModel
         $products = json_decode($products, true);
         $count = 0;
         foreach ($products as $value) {
-            $count = $count + $value;
+            $count = $count + $value['count'];
         }
         return $count;
     }
 
     /**
-     * @param int $stokeId
+     * @param int $userId
+     * @return int
+     */
+    public function countProductsInBasketForLoginUser (int $userId) {
+        $goods = $this->newGoods();
+        $numberOrder = $goods->getNumberOrdesInBasketForUser($userId);
+        $countProducts = $goods->getCountProductsInBasket(intval($numberOrder));
+        return intval($countProducts['COUNT(*)']);
+    }
+
+    /**
+     * @param int $userId
+     * @param array $product
+     */
+    public function addProductInBasketForLoginUser (int $userId, array $product) {
+        $goods = $this->newGoods();
+        $numberOrder = $goods->getNumberOrdesInBasketForUser($userId);
+        $numberOrder = $numberOrder['id'];
+        if (!empty($numberOrder)) {
+            $goods->createNewOrder($userId, $product);
+        }
+        $goods->addToOrderBasketProduct(intval($numberOrder), $product);
+    }
+
+    /**
      * @param Response $response
      * @param Request $request
+     * @param array $product
      * @return Response
      */
-    public function addProductInBasket (int $stokeId, Response $response, Request $request) {
+    public function addProductInBasketForLogoutUser (Response $response, Request $request, array $product) {
+        $products = [];
         $cookie = $request->cookies->all();
         if (key_exists('products', $cookie)) {
             $products = json_decode($cookie['products'], true);
-
         }
-        if (isset($products[$stokeId])) {
-            $products[$stokeId] = $products[$stokeId] + 1;
-        } else {
-            $products[$stokeId] = 1;
-        }
-
-        $cookie = new Cookie('products', json_encode($products), strtotime('now + 60 minutes'));
+        array_push($products, ['cost' => $product['cost'], 'id' => $product['id']]);
+        $cookie = new Cookie('products', json_encode($products));
         $response->headers->setCookie($cookie);
         $response->send();
         return $response;
@@ -179,12 +180,45 @@ class GoodModel extends BaseModel
      * @param Request $request
      * @return array|mixed
      */
-    public function getProductsFromBasket (Request $request) {
+    public function getProductsFromBasketForLogoutUser (Request $request) {
         if (key_exists('products', ($request->cookies->all()))) {
             $products = ($request->cookies->all())['products'];
-            return json_decode($products, true);
+            $products = json_decode($products, true);
+            $result = [];
+            foreach ($products as $key => $value) {
+                if (array_key_exists($value['id'], $result)) {
+                    ++$result[$value['id']]['count'];
+                    $result[$value['id']['sum']] += $value['cost'];
+                } else {
+                    $result[$value['id']] = ['count' => 1, 'sum' => $value['cost']];
+                }
+            }
+            return $result;
         }
         return [];
+    }
+
+    /**
+     * @param int $userId
+     * @return array|mixed
+     */
+    public function getProductsFromBasketForLoginUser (int $userId) {
+        $goods = $this->newGoods();
+        $numberOrder = $goods->getNumberOrdesInBasketForUser($userId);
+        if (empty($numberOrder)) {
+            return [];
+        }
+        $products = $goods->getProductsFromBasket($numberOrder);
+        $result = [];
+        foreach ($products as $key => $value) {
+            if (array_key_exists($value['stoke_id'], $result)) {
+                ++$result[$value['stoke_id']]['count'];
+                $result[$value['stoke_id']]['sum'] += $value['actual_cost'];
+            } else {
+                $result[$value['stoke_id']] = ['count' => 1, 'sum' => $value['actual_cost']];
+            }
+        }
+        return $result;
     }
 
 
@@ -194,7 +228,7 @@ class GoodModel extends BaseModel
      * @param Request|null $request
      * @return Response
      */
-    public function deleteProductFromBasket (int $stokeId = null, Response $response, Request $request = null) {
+    public function deleteProductFromBasket (int $stokeId = null, Response $response, Request $request = null) { // TODO: rewrite
         if (empty($stokeId)) {
             $response->headers->clearCookie('products');
             return $response;

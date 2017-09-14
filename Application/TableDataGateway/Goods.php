@@ -195,51 +195,116 @@ class Goods
 
     /**
      * @param int $userId
-     * @param $basket
-     * @param string $numberOrder
-     * @param int $takeToBasket
+     * @param array $basket
      */
-    public function createNewOrder (int $userId, $basket, string $numberOrder, int $takeToBasket = 1) {
+    public function createAndExecuteNewOrder (int $userId, array $basket) { // last name: createNewOrder
         $date = date("Y-m-d H:i");
+        $query = "INSERT INTO `orders` (`orders`.`users_id`, `orders`.`create_at`, `orders`.`executed_at`, `orders`.`is_basket`)
+                  VALUES (:usersId, :createAt, :executedAt, :isBasket);";
+        $forExecute = [':usersId' => $userId, ':createAt' => $date, ':executedAt' => $date, 'isBasket' => 0];
         $connection = $this->dataBase->getConnection();
         $connection->beginTransaction();
+        $ordersId = $this->dataBase->changeData($query, $forExecute);
         foreach ($basket as $value) {
-            $query = "INSERT INTO `orders` (`orders`.`users_id`, `orders`.`stoke_id`, `orders`.`count`, 
-                      `orders`.`summ_cost`, `orders`.`date`, `orders`.`basket`, `orders`.`number_order`)
-                      VALUES (:userId, :stokeId, :count, :sumCost, :date, :basket, :numberOrder);";
-            $forExecute = [':userId' => $userId, ':stokeId' => $value['id'], ':count' => $value['countInBasket'],
-                ':sumCost' => $value['sum'], ':date' => $date, ':basket' => $takeToBasket, ':numberOrder' => $numberOrder];
-            $this->dataBase->changeData($query, $forExecute);
+            $query = "INSERT INTO `orders_item` (`orders_item`.`orders_id`, `orders_item`.`stoke_id`,
+                      `orders_item`.`actual_cost`) VALUES (:ordersId, :stokeId, :actualCost);";
+            $forExecute = [':ordersId' => $ordersId, 'stokeId' => $value['id'],
+                            ':actualCost' => $value['cost']];
         }
+        $this->dataBase->changeData($query, $forExecute);
         $connection->commit();
+    }
+
+    /**
+     * @param int $userId
+     * @param array $product
+     * @return bool|string
+     */
+    public function createNewOrder (int $userId, array $product) {
+        $date = date("Y-m-d H:i:s");
+        $query = "INSERT INTO `orders` (`orders`.`users_id`, `orders`.`create_at`) VALUES (:usersId, :createAt);";
+        $forExecute = ['usersId' => $userId, ':createAt' => $date];
+        $connection = $this->dataBase->getConnection();
+        $connection->beginTransaction();
+        $ordersId = $this->dataBase->changeData($query, $forExecute);
+        $query = "INSERT INTO `orders_item` (`orders_item`.`orders_id`, `orders_item`.`stoke_id`,
+        `orders_item`.`actual_cost`) VALUES (:ordersId, :stokeId, :actualCost);";
+        $forExecute = [':ordersId' => $ordersId, ':stokeId' => $product['id'],
+                        ':actualCost' => $product['cost']];
+        $this->dataBase->changeData($query, $forExecute);
+        $connection->commit();
+        return $ordersId;
     }
 
     /**
      * @param int $userId
      * @return array|mixed
      */
-    public function getOrderByUserId (int $userId) {
-        $query = "SELECT `stoke`.`product_name`, `stoke`.`picture`, `stoke`.`cost`, `orders`.`count`, 
-                    `orders`.`summ_cost`, `orders`.`date` FROM `stoke`, `orders`
-                    WHERE `orders`.`users_id` = :id AND `stoke`.`id` = `orders`.`stoke_id`;";
-        $forExecute = [':id' => $userId];
-        return $this->dataBase->getData($query, $forExecute);
+    public function getNumberOrdesInBasketForUser (int $userId) {
+        $query = "SELECT `orders`.`id` FROM `orders` WHERE `orders`.`is_basket` = :userId;";
+        $forExecute = [':userId' => $userId];
+        return $this->dataBase->getData($query, $forExecute, false);
     }
 
     /**
-     * @param string $numberOrder
+     * @param int $numberOrder
+     * @param array $product
+     */
+    public function addToOrderBasketProduct (int $numberOrder, array  $product) {
+        $query = "INSERT INTO `orders_item` (`orders_item`.`orders_id`, `orders_item`.`stoke_id`, `orders_item`.`actual_cost`)
+                  VALUES (:ordersId, :stokeId, :actualCost);";
+        $forExecute = [':ordersId' => $numberOrder, ':stokeId' => $product['id'], ':actualCost' => $product['cost']];
+        $this->dataBase->changeData($query, $forExecute);
+    }
+
+    /**
+     * @param int $numberOrder
+     */
+    public function formBusketToExecuted (int $numberOrder) {
+        $date = date("Y-m-d H:i:s");
+        $query = "UPDATE `orders` SET `orders`.`executed_at` = :executeDate, `orders`.`is_basket` = 0
+                  WHERE `orders`.`id` = :numberOrder;";
+        $forExecute = [':executeDate' => $date, ':numberOrder' => $numberOrder];
+        $this->dataBase->changeData($query, $forExecute);
+    }
+
+    /**
+     * @param int $numberOrder
      * @return array|mixed
      */
-    public function getOrderByOrderNumber (string $numberOrder) {
-        $query = "SELECT `stoke`.`product_name`, `stoke`.`picture`, `stoke`.`cost`, `orders`.`count`, 
-                    `orders`.`summ_cost`, `orders`.`date` FROM `stoke`, `orders`
-                    WHERE `orders`.`number_order` = :numberOrder AND `stoke`.`id` = `orders`.`stoke_id`;";
-        $forExecute = ['numberOrder' => $numberOrder];
+    public function getProductsFromBasket (int $numberOrder) {
+        $query = "SELECT `orders_item`.`stoke_id`, `orders_item`.`actual_cost`
+                  FROM `orders_item` WHERE `orders_item`.`orders_id` = :ordersId";
+        $forExecute = [':ordersId' => $numberOrder];
         return $this->dataBase->getData($query, $forExecute);
     }
 
-    public function changeFlagBasket () {
+    public function getCountProductsInBasket (int $numberOrder) {
+        $query = "SELECT COUNT(*) FROM `orders_item` WHERE `orders_item`.`orders_id` = :ordersId";
+        $forExecute = [':ordersId' => $numberOrder];
+        return $this->dataBase->getData($query, $forExecute, false);
+    }
 
+    /**
+     * @param int $numberOrder
+     * @param int|null $stokeId
+     */
+    public function deleteFromBasket (int $numberOrder, int $stokeId = null) {
+        $connection = $this->dataBase->getConnection();
+        $connection->beginTransaction();
+        if (!empty($stokeId)) {
+            $query = "DELETE FROM `orders_item` WHERE `orders_item`.`orders_id` = :ordersId AND `orders_item`.`stoke_id` = :stokeId";
+            $forExecute = [':ordersId' => $numberOrder, ':stokeId' => $stokeId];
+            $this->dataBase->changeData($query, $forExecute);
+        } else {
+            $query = "DELETE FROM `orders_item` WHERE `orders_item`.`orders_id` = :ordersId";
+            $forExecute = [':ordersId' => $numberOrder];
+            $this->dataBase->changeData($query, $forExecute);
+            $query = "DELETE FROM `orders` WHERE `orders`.`id` = :id";
+            $forExecute = [':id' => $numberOrder];
+            $this->dataBase->changeData($query, $forExecute);
+        }
+        $connection->commit();
     }
 
 }
