@@ -37,6 +37,41 @@ class RegistrationModel
         return true;
     }
 
+    /**
+     * @param string $phoneNumber
+     * @return bool|int
+     */
+    public function isPhoneExist (string $phoneNumber) {
+        $userId = $this->newRegistration(new DbQuery())->isPhoneExist($phoneNumber)['id'];
+        if (empty($userId)) {
+            return false;
+        }
+        return intval($userId);
+    }
+
+    /**
+     * @param string $phoneNumber
+     * @return int
+     */
+    public function addNewUserByPhone (string  $phoneNumber) {
+        $userId = $this->newRegistration(new DbQuery())->addNewUserByPhone($phoneNumber);
+        return intval($userId);
+    }
+
+    /**
+     * @param string $phoneNumber
+     * @return array|int
+     */
+    public function registrateNewUserByPhone (string $phoneNumber) {
+        if (!is_numeric($phoneNumber) || (strlen($phoneNumber) != 11)) {
+            return ['error' => 'Error: phone is not corrected.'];
+        }
+        $userId = $this->isPhoneExist($phoneNumber);
+        if ($userId) {
+            return $userId;
+        }
+        return $this->addNewUserByPhone($phoneNumber);
+    }
 
 
 

@@ -25,7 +25,7 @@ class RegistrationController extends BaseController
     /**
      * @return RegistrationModel
      */
-    public  function newRegistrationMode() {
+    public  function newRegistrationModel() {
         return new RegistrationModel();
     }
 
@@ -42,7 +42,7 @@ class RegistrationController extends BaseController
         $passwordHash = password_hash($request->get('password'), PASSWORD_BCRYPT);
         $phone = $request->get('phone');
 
-        $registrationModel = $this->newRegistrationMode();
+        $registrationModel = $this->newRegistrationModel();
         $isUserExist = $registrationModel->isLoginExist($email);
         if ($isUserExist) {
             return ['error' => 'Error: User already exist whith this login.'];
@@ -58,8 +58,13 @@ class RegistrationController extends BaseController
         if (!is_numeric($phone) || (strlen($phone) != 11)) {
             return ['error' => 'Error: phone is not corrected. '];
         }
+        // add method: user done order before only by number and this user want to registrate
+        $userId = $registrationModel->isPhoneExist($phone);
+        if ($userId) {
+            return ['error' => 'Error: phone already exist.'];
+        }
 
-        $registrationModel = new RegistrationModel(new DbQuery());
+        $registrationModel = $this->newRegistrationModel();
         $userId = $registrationModel->saveNewUser($email, $phone, $passwordHash);
         if ($userId === false) {
             return ['error' => 'Error: new user was not created.'];

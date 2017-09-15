@@ -4,6 +4,7 @@ namespace Application\Controllers;
 
 use Application\Models\LoginModel;
 use Application\Models\GoodModel;
+use Application\Models\RegistrationModel;
 
 class BaseController
 {
@@ -19,6 +20,10 @@ class BaseController
      */
     public function newGoodModel () {
         return new GoodModel();
+    }
+
+    public function newRegistrationModel () {
+        return new RegistrationModel();
     }
 
 

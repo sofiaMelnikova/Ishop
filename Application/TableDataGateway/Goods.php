@@ -241,7 +241,7 @@ class Goods
      * @return array|mixed
      */
     public function getNumberOrdesInBasketForUser (int $userId) {
-        $query = "SELECT `orders`.`id` FROM `orders` WHERE `orders`.`is_basket` = :userId;";
+        $query = "SELECT `orders`.`id` FROM `orders` WHERE `orders`.`users_id` = :userId AND `orders`.`is_basket` = 1;";
         $forExecute = [':userId' => $userId];
         return $this->dataBase->getData($query, $forExecute, false);
     }

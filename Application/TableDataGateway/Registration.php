@@ -41,4 +41,23 @@ class Registration
 
     }
 
+    /**
+     * @param string $phoneNumber
+     * @return array|mixed
+     */
+    public function isPhoneExist (string $phoneNumber) {
+        $query = "SELECT `users`.`id` FROM `users` WHERE `users`.`phone` = :phoneNumber";
+        $forExecute = [':phoneNumber' => $phoneNumber];
+        return $this->dataBase->getData($query, $forExecute, false);
+    }
+
+    /**
+     * @param string $phoneNumber
+     * @return bool|string
+     */
+    public function addNewUserByPhone (string $phoneNumber) {
+        $query = "INSERT INTO `users` (`phone`) VALUES (:phoneNumber)";
+        $forExecute = [':phoneNumber' => $phoneNumber];
+        return $this->dataBase->changeData($query, $forExecute);
+    }
 }

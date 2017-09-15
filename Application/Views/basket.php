@@ -16,7 +16,6 @@
         <th>#</th>
         <th>Photo</th>
         <th>Product`s name</th>
-        <th>Cost of one position</th>
         <th>Count</th>
         <th>Sum</th>
         <th>Dec</th>
@@ -29,7 +28,6 @@
         <th scope="row">1</th>
         <td><img class="card-img-top" src="{{product.picture}}" alt="Card image cap"></td>
         <td>{{product.product_name}}</td>
-        <td>{{product.cost}}</td>
         <td>{{product.countInBasket}}</td>
         <td>{{product.sum}}</td>
         <td><a href="/takeToTheBasket?id={{product.id}}" type="button" class="btn btn-success">+</a></td>
@@ -39,8 +37,16 @@
     </tbody>
 </table>
 
-<a href="/createOrder" type="button" class="btn btn-success">Create order on {{resultSum}}$</a>
+<form action="/createOrder" method="post">
+    {% if logout %}
+    <div class="form-group">
+        <label>Phone</label>
+        <input class="form-control" name="phone" placeholder="88003300">
+    </div>
+    {% endif %}
+    <button href="/createOrder" type="submit" class="btn btn-success">Create order on {{resultSum}}$</button>
+</form>
 <a href="/catalogue" type="button" class="btn btn-primary">Catalogue</a>
-
+{{error}}
 </body>
 </html>

@@ -90,14 +90,36 @@ class GoodModel extends BaseModel
      * @param Request $request
      * @return array
      */
-    public function getContentFromBasket (Request $request) { // TODO: rewrite
-        return (new GoodsController())->showBasketAction($request);
+    public function getContentForShowingBasketForLogoutUser (Request $request) {
+        $result = $this->getContentForShowingBasket($this->getProductsFromBasketForLogoutUser($request));
+        $result['logout'] = true;
+        return $result;
     }
 
-    public function NEWgetContentFromBasket () {
-
+    /**
+     * @param int $userId
+     * @return array
+     */
+    public function getContentForShowingBasketForLoginUser (int $userId) {
+        $result['logout'] = false;
+        return $this->getContentForShowingBasket($this->getProductsFromBasketForLoginUser($userId));
     }
 
+    /**
+     * @param array $basketProducts
+     * @return array
+     */
+    private function getContentForShowingBasket (array $basketProducts) {
+        $resultSum = 0;
+        $products = [];
+        foreach ($basketProducts as $key => $value) {
+            $product = $this->getAllOfProduct($key);
+            $resultSum = $resultSum + $value['sum'];
+            $product = array_merge($product, ['countInBasket' => $value['count'], 'sum' => $value['sum']]);
+            array_push($products, $product);
+        }
+        return ['products' => $products,'resultSum' => $resultSum];
+    }
 
 
     /**
@@ -116,6 +138,15 @@ class GoodModel extends BaseModel
     }
 
     /**
+     * @param int $userId
+     * @return int
+     */
+    public function getNumberOrdesInBasketForUser (int $userId) {
+        $userId = $this->newGoods()->getNumberOrdesInBasketForUser($userId)['id'];
+        return intval($userId);
+    }
+
+    /**
      * @param Request $request
      * @return int
      */
@@ -127,7 +158,7 @@ class GoodModel extends BaseModel
         $products = json_decode($products, true);
         $count = 0;
         foreach ($products as $value) {
-            $count = $count + $value['count'];
+            $count = ++$count;
         }
         return $count;
     }
@@ -138,8 +169,8 @@ class GoodModel extends BaseModel
      */
     public function countProductsInBasketForLoginUser (int $userId) {
         $goods = $this->newGoods();
-        $numberOrder = $goods->getNumberOrdesInBasketForUser($userId);
-        $countProducts = $goods->getCountProductsInBasket(intval($numberOrder));
+        $numberOrder = $this->getNumberOrdesInBasketForUser($userId);
+        $countProducts = $goods->getCountProductsInBasket($numberOrder);
         return intval($countProducts['COUNT(*)']);
     }
 
@@ -149,12 +180,11 @@ class GoodModel extends BaseModel
      */
     public function addProductInBasketForLoginUser (int $userId, array $product) {
         $goods = $this->newGoods();
-        $numberOrder = $goods->getNumberOrdesInBasketForUser($userId);
-        $numberOrder = $numberOrder['id'];
+        $numberOrder = $this->getNumberOrdesInBasketForUser($userId);
         if (!empty($numberOrder)) {
             $goods->createNewOrder($userId, $product);
         }
-        $goods->addToOrderBasketProduct(intval($numberOrder), $product);
+        $goods->addToOrderBasketProduct($numberOrder, $product);
     }
 
     /**
@@ -178,24 +208,29 @@ class GoodModel extends BaseModel
 
     /**
      * @param Request $request
+     * @param bool $forShowBasket
      * @return array|mixed
      */
-    public function getProductsFromBasketForLogoutUser (Request $request) {
-        if (key_exists('products', ($request->cookies->all()))) {
-            $products = ($request->cookies->all())['products'];
-            $products = json_decode($products, true);
-            $result = [];
-            foreach ($products as $key => $value) {
-                if (array_key_exists($value['id'], $result)) {
-                    ++$result[$value['id']]['count'];
-                    $result[$value['id']['sum']] += $value['cost'];
-                } else {
-                    $result[$value['id']] = ['count' => 1, 'sum' => $value['cost']];
-                }
-            }
-            return $result;
+    public function getProductsFromBasketForLogoutUser (Request $request, bool $forShowBasket = true) {
+        if (!key_exists('products', ($request->cookies->all()))) {
+            return [];
         }
-        return [];
+        if (!$forShowBasket) {
+            $products = ($request->cookies->all())['products'];
+            return json_decode($products, true);
+        }
+        $products = ($request->cookies->all())['products'];
+        $products = json_decode($products, true);
+        $result = [];
+        foreach ($products as $key => $value) {
+            if (array_key_exists($value['id'], $result)) {
+                ++$result[$value['id']]['count'];
+                $result[$value['id']]['sum'] += $value['cost'];
+            } else {
+                $result[$value['id']] = ['count' => 1, 'sum' => $value['cost']];
+            }
+        }
+        return $result;
     }
 
     /**
@@ -204,7 +239,7 @@ class GoodModel extends BaseModel
      */
     public function getProductsFromBasketForLoginUser (int $userId) {
         $goods = $this->newGoods();
-        $numberOrder = $goods->getNumberOrdesInBasketForUser($userId);
+        $numberOrder = $this->getNumberOrdesInBasketForUser($userId);
         if (empty($numberOrder)) {
             return [];
         }
@@ -228,23 +263,32 @@ class GoodModel extends BaseModel
      * @param Request|null $request
      * @return Response
      */
-    public function deleteProductFromBasket (int $stokeId = null, Response $response, Request $request = null) { // TODO: rewrite
+    public function deleteProductFromBasketForLogoutUser (Response $response, int $stokeId = null, Request $request = null) {
         if (empty($stokeId)) {
             $response->headers->clearCookie('products');
             return $response;
         }
-
         $products = ($request->cookies->all())['products'];
         $products = json_decode($products, true);
-        if ($products[$stokeId] > 1) {
-            $products[$stokeId] = $products[$stokeId] - 1;
-        } else {
-            unset($products[$stokeId]);
+        foreach ($products as $key => $value) {
+            if ($value['id'] == $stokeId) {
+                unset($products[$key]);
+                $cookie = new Cookie('products', json_encode($products));
+                $response->headers->setCookie($cookie);
+                $response->send();
+                return $response;
+            }
         }
-        $cookie = new Cookie('products', json_encode($products));
-        $response->headers->setCookie($cookie);
-        $response->send();
-        return $response;
+    }
+
+    /**
+     * @param int $userId
+     * @param int|null $stokeId
+     */
+    public function deleteProductFromBasketForLoginUser (int $userId, int $stokeId = null) {
+        $goods = $this->newGoods();
+        $numberOrder = $this->getNumberOrdesInBasketForUser($userId);
+        $goods->deleteFromBasket($numberOrder, $stokeId);
     }
 
     /**

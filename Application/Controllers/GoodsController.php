@@ -18,7 +18,7 @@ class GoodsController extends BaseController
      * @param int $actualPage
      * @return array
      */
-    public function showCatalogAction (string $kind, int $actualPage, Request $request) {
+    public function showCatalogAction (string $kind, int $actualPage, Request $request) { // good =)
         $loginModel = $this->newLoginModel();
         $goodModel = $this->newGoodModel();
         $countProducts = $goodModel->getCountProducts($kind);
@@ -30,16 +30,18 @@ class GoodsController extends BaseController
         $pagesMinMax = $pagination->getMainMaxPages($actualPage, $this->showPages, $countPages);
         $productsMinMax = $pagination->getMinMaxElementsOnPage($actualPage, $this->productsOnPage);
         $products = $goodModel->getNamePicturePriceOfKind($kind, $productsMinMax['min'], $this->productsOnPage);
-        $countProducts = $goodModel->countProducts($request);
         $id = $loginModel->isUserLogin($request);
         $admin = false;
         $login = false;
         if ($id) {
+            $countProductsInBasket = $goodModel->countProductsInBasketForLoginUser($id);
             $admin = $loginModel->isAdmin($id);
             $login = $loginModel->getLogin($id);
+        } else {
+            $countProductsInBasket = $goodModel->countProductsInBasketForLogoutUser($request);
         }
         return ['products' => $products, 'pages' => $pagesMinMax, 'kind' => $kind, 'sumPages' => $countPages,
-            'countProducts' => $countProducts, 'admin' => $admin, 'login' => $login];
+            'countProductsInBasket' => $countProductsInBasket, 'admin' => $admin, 'login' => $login];
 
     }
 
@@ -54,39 +56,23 @@ class GoodsController extends BaseController
         return ['product' => $product];
     }
 
-
     /**
      * @param Request $request
      * @param Response $response
      * @return bool|Response
      */
-    public function takeToTheBasketAction (Request $request, Response $response) {
+    public function takeToTheBasketAction (Request $request, Response $response) { // good =)
         $goodModel = $this->newGoodModel();
-        $loginModel = new LoginModel();
-        $userId = $loginModel->isUserLogin($request);
-        if (!$userId) {
-            return false; // Error: user is not login return loginPage
-        }
+        $loginModel = $this->newLoginModel();
         $stokeId = intval($request->get('id'));
-
-        return $goodModel->addProductInBasket($stokeId, $response, $request);
-    }
-
-    /**
-     * @param Request $request
-     * @param Response $response
-     * @return bool|Response
-     */
-    public function NEWTakeToTheBasketAction (Request $request, Response $response) {
-        $goodModel = $this->newGoodModel();
-        $loginModel = new LoginModel();
         $userId = $loginModel->isUserLogin($request);
+        $product = $goodModel->getAllOfProduct($stokeId);
         if (!$userId) {
-            $stokeId = intval($request->get('id'));
-            return $goodModel->addProductInBasket($stokeId, $response, $request, false);
             // return false; // Error: user is not login return loginPage
+            return $goodModel->addProductInBasketForLogoutUser($response, $request, $product);
         }
-
+        $goodModel->addProductInBasketForLoginUser($userId, $product);
+        return $response;
     }
 
     /**
@@ -94,11 +80,18 @@ class GoodsController extends BaseController
      * @param Request $request
      * @return Response
      */
-    public function deleteFormBasketAction (Response $response, Request $request) {
+    public function deleteFormBasketAction (Response $response, Request $request) { // good =)
+        $loginModel = $this->newLoginModel();
+        $userId = $loginModel->isUserLogin($request);
         $goodModel = $this->newGoodModel();
         $stokeId = intval($request->get('id'));
-        $goodModel->deleteProductFromBasket($stokeId, $response, $request);
-        $content = $goodModel->getContentFromBasket($request);
+        if ($userId) {
+            $goodModel->deleteProductFromBasketForLoginUser($userId, $stokeId);
+            $content = $goodModel->getContentForShowingBasketForLoginUser($userId);
+        } else {
+            $response = $goodModel->deleteProductFromBasketForLogoutUser($response, $stokeId, $request);
+            $content = $goodModel->getContentForShowingBasketForLogoutUser($request);
+        }
         $response->setContent($content);
         return $response;
     }
@@ -107,38 +100,33 @@ class GoodsController extends BaseController
      * @param Request $request
      * @return array
      */
-    public function showBasketAction (Request $request) {
-        $resultSum = 0;
-        $goodModel= $this->newGoodModel();
-        $basketProducts = $goodModel->getProductsFromBasket($request);
-        $products = [];
-        foreach ($basketProducts as $key => $value) {
-            $product = $goodModel->getAllOfProduct($key);
-            $sum = $product['cost'] * $value;
-            $resultSum = $resultSum + $sum;
-            $product = array_merge($product, ['countInBasket' => $value, 'sum' => $sum]);
-            array_push($products, $product);
-        }
-        return ['products' => $products,'resultSum' => $resultSum];
+    public function showBasketAction (Request $request) { // good =)
+        $userId = $this->newLoginModel()->isUserLogin($request);
+        if ($userId) {
+            return $this->newGoodModel()->getContentForShowingBasketForLoginUser($userId);
+    }
+        return $this->newGoodModel()->getContentForShowingBasketForLogoutUser($request);
     }
 
     /**
      * @param Request $request
      * @param Response $response
-     * @return Response
+     * @return array|int|Response
      */
-    public function createOrderAction (Request $request, Response $response) {
-        $loginModel = new LoginModel();
-        $userId = $loginModel->isUserLogin($request);
-        if ($userId) { // if user login
-
-        }
-        // user enter phone number
+    public function createOrderAction (Request $request, Response $response) { // good =)
+        $userId = $this->newLoginModel()->isUserLogin($request);
         $goodModel= $this->newGoodModel();
-        $basket = $goodModel->getContentFromBasket($request);
-        $goodModel = $this->newGoodModel();
-        $goodModel->createNewOrder($userId, $basket['products']);
-        return $goodModel->deleteProductFromBasket(null, $response);
+        if ($userId) {
+            $goodModel->executedOrderForLoginUser($userId);
+        }
+        $registrationModel = $this->newRegistrationModel();
+        $userId = $registrationModel->registrateNewUserByPhone($request->get('phone'));
+        if (is_array($userId)) {
+            return $userId;
+        }
+        $basket =$goodModel->getProductsFromBasketForLogoutUser($request, false);
+        $goodModel->executedOrderForLogoutUser($userId, $basket);
+        return $goodModel->deleteProductFromBasketForLogoutUser($response);
     }
 
 

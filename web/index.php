@@ -146,9 +146,13 @@ $app->get('/deleteProductFromBasket', function (Request $request) use ($app) {
     return $result;
 });
 
-$app->get('/createOrder', function (Request $request) use ($app) {
+$app->post('/createOrder', function (Request $request) use ($app) {
     $response = Response::create('', 302, ['Location' => 'http://127.0.0.1/catalogue']);
-    (new GoodsController())->createOrderAction($request, $response);
+    $result = (new GoodsController())->createOrderAction($request, $response);
+//    if (is_array($result)) {
+//        $result = (new GoodsController())->showBasketAction($request, $result);
+//        return $app['twig']->render('basket.php', $result);
+//    }
     return $response;
 
 });
@@ -163,9 +167,9 @@ $app->get('/historyOfOrders', function () use ($app) {
 });
 
 $app->get('/test', function (Request $request) use ($app){
-    $newGoods = new \Application\TableDataGateway\Goods(new \Engine\DbQuery());
-    $result = $newGoods->getCountProductsInBasket(1);
-    var_dump($result['COUNT(*)']);
+    $registrationModel = new \Application\TableDataGateway\Registration(new \Engine\DbQuery());
+    $result = $registrationModel->addNewUserByPhone('88003332200');
+    var_dump($result);
     return 'good';
 });
 
