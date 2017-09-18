@@ -101,8 +101,9 @@ class GoodModel extends BaseModel
      * @return array
      */
     public function getContentForShowingBasketForLoginUser (int $userId) {
+        $result = $this->getContentForShowingBasket($this->getProductsFromBasketForLoginUser($userId));
         $result['logout'] = false;
-        return $this->getContentForShowingBasket($this->getProductsFromBasketForLoginUser($userId));
+        return $result;
     }
 
     /**
@@ -181,7 +182,7 @@ class GoodModel extends BaseModel
     public function addProductInBasketForLoginUser (int $userId, array $product) {
         $goods = $this->newGoods();
         $numberOrder = $this->getNumberOrdesInBasketForUser($userId);
-        if (!empty($numberOrder)) {
+        if (empty($numberOrder)) {
             $goods->createNewOrder($userId, $product);
         }
         $goods->addToOrderBasketProduct($numberOrder, $product);
@@ -244,6 +245,9 @@ class GoodModel extends BaseModel
             return [];
         }
         $products = $goods->getProductsFromBasket($numberOrder);
+        if (empty($products)) {
+            return [];
+        }
         $result = [];
         foreach ($products as $key => $value) {
             if (array_key_exists($value['stoke_id'], $result)) {
@@ -275,7 +279,6 @@ class GoodModel extends BaseModel
                 unset($products[$key]);
                 $cookie = new Cookie('products', json_encode($products));
                 $response->headers->setCookie($cookie);
-                $response->send();
                 return $response;
             }
         }
@@ -311,4 +314,35 @@ class GoodModel extends BaseModel
         return $properties;
     }
 
+    /**
+     * @param int $userId
+     * @return array|mixed
+     */
+    public function getInfoForHistoryOrdersByUserId (int $userId) {
+        return $this->newGoods()->getInfoForHistoryOrdersByUserId($userId);
+    }
+
+    /**
+     * @param string $phoneNumber
+     * @return array
+     */
+    public function getHistoryForLogoutUser (string $phoneNumber) {
+        $userId = $this->newRegistrationModel()->isPhoneExist($phoneNumber);
+        if (!$userId) {
+            return ['error' => 'You have not orders.'];
+        }
+        $orders = $this->getInfoForHistoryOrdersByUserId($userId);
+        if (empty($orders)) {
+            return ['error' => 'You have not orders.'];
+        }
+        return ['products' => $orders];
+    }
+
+    /**
+     * @param int $userId
+     * @return array
+     */
+    public function getHistoryForLoginUser (int $userId) {
+        return ['products' => $this->getInfoForHistoryOrdersByUserId($userId)];
+    }
 }

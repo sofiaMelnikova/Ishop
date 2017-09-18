@@ -148,11 +148,7 @@ $app->get('/deleteProductFromBasket', function (Request $request) use ($app) {
 
 $app->post('/createOrder', function (Request $request) use ($app) {
     $response = Response::create('', 302, ['Location' => 'http://127.0.0.1/catalogue']);
-    $result = (new GoodsController())->createOrderAction($request, $response);
-//    if (is_array($result)) {
-//        $result = (new GoodsController())->showBasketAction($request, $result);
-//        return $app['twig']->render('basket.php', $result);
-//    }
+    $response = (new GoodsController())->createOrderAction($request, $response);
     return $response;
 
 });
@@ -162,8 +158,9 @@ $app->get('/logout', function (Request $request) use ($app) {
     return (new LoginController())->logoutAction($response, $request);
 });
 
-$app->get('/historyOfOrders', function () use ($app) {
-    return $app['twig']->render('historyOfOrders.php');
+$app->get('/historyOfOrders', function (Request $request) use ($app) {
+    $result = (new GoodsController())->showHistoryAction($request);
+    return $app['twig']->render('historyOfOrders.php', $result);
 });
 
 $app->get('/test', function (Request $request) use ($app){

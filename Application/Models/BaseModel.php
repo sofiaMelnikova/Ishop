@@ -13,4 +13,11 @@ class BaseModel
     public function newGoods () {
         return new Goods(new DbQuery());
     }
+
+    /**
+     * @return RegistrationModel
+     */
+    public function newRegistrationModel () {
+        return new RegistrationModel();
+    }
 }

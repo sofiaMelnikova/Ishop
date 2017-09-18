@@ -12,7 +12,7 @@
     <form enctype="multipart/form-data" action="/saveChangeProduct" method="post">
         <input type="hidden" name="stokeId" value="{{product.id}}">
 
-        <div class="photoProduct"><img src="{{product.picture}}"></div>
+        <div><img class="photoProduct" src="{{product.picture}}"></div>
 
         <div class="form-group">
             <label for="exampleFormControlFile1">Choose new photo</label>

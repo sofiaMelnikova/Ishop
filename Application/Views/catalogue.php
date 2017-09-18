@@ -26,11 +26,13 @@
         </ul>
         <ul class="nav navbar-nav navbar-right">
             {% if login %}
+            <li><a href="/historyOfOrders">History of orders </a></li>
             <li><a href="/showBasket">Basket <span class="badge">{% if countProductsInBasket %}{{countProductsInBasket}}{% else %}0{% endif %}</span></a></li>
-            <li><a href="/logout" type="button" class="btn btn-info" ">Logout: {{login}}</a></li>
+            <li><a href="/logout" type="button" class="btn btn-info" >Logout: {{login}}</a></li>
             {% else %}
+            <li><a href="/historyOfOrders">History of orders </a></li>
             <li><a href="/showBasket">Basket <span class="badge">{% if countProductsInBasket %}{{countProductsInBasket}}{% else %}0{% endif %}</span></a></li>
-            <li><a href="/login" type="button" class="btn btn-info" ">Login</a></li>
+            <li><a href="/login" type="button" class="btn btn-info" >Login</a></li>
             {% endif %}
         </ul>
     </div>

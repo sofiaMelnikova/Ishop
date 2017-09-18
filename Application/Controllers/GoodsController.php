@@ -18,7 +18,7 @@ class GoodsController extends BaseController
      * @param int $actualPage
      * @return array
      */
-    public function showCatalogAction (string $kind, int $actualPage, Request $request) { // good =)
+    public function showCatalogAction (string $kind, int $actualPage, Request $request) {
         $loginModel = $this->newLoginModel();
         $goodModel = $this->newGoodModel();
         $countProducts = $goodModel->getCountProducts($kind);
@@ -61,14 +61,13 @@ class GoodsController extends BaseController
      * @param Response $response
      * @return bool|Response
      */
-    public function takeToTheBasketAction (Request $request, Response $response) { // good =)
+    public function takeToTheBasketAction (Request $request, Response $response) {
         $goodModel = $this->newGoodModel();
         $loginModel = $this->newLoginModel();
         $stokeId = intval($request->get('id'));
         $userId = $loginModel->isUserLogin($request);
         $product = $goodModel->getAllOfProduct($stokeId);
         if (!$userId) {
-            // return false; // Error: user is not login return loginPage
             return $goodModel->addProductInBasketForLogoutUser($response, $request, $product);
         }
         $goodModel->addProductInBasketForLoginUser($userId, $product);
@@ -80,7 +79,7 @@ class GoodsController extends BaseController
      * @param Request $request
      * @return Response
      */
-    public function deleteFormBasketAction (Response $response, Request $request) { // good =)
+    public function deleteFormBasketAction (Response $response, Request $request) {
         $loginModel = $this->newLoginModel();
         $userId = $loginModel->isUserLogin($request);
         $goodModel = $this->newGoodModel();
@@ -92,7 +91,7 @@ class GoodsController extends BaseController
             $response = $goodModel->deleteProductFromBasketForLogoutUser($response, $stokeId, $request);
             $content = $goodModel->getContentForShowingBasketForLogoutUser($request);
         }
-        $response->setContent($content);
+        $response->setContent(json_encode($content));
         return $response;
     }
 
@@ -100,7 +99,7 @@ class GoodsController extends BaseController
      * @param Request $request
      * @return array
      */
-    public function showBasketAction (Request $request) { // good =)
+    public function showBasketAction (Request $request) {
         $userId = $this->newLoginModel()->isUserLogin($request);
         if ($userId) {
             return $this->newGoodModel()->getContentForShowingBasketForLoginUser($userId);
@@ -111,22 +110,41 @@ class GoodsController extends BaseController
     /**
      * @param Request $request
      * @param Response $response
-     * @return array|int|Response
+     * @return Response
      */
-    public function createOrderAction (Request $request, Response $response) { // good =)
+    public function createOrderAction (Request $request, Response $response) {
         $userId = $this->newLoginModel()->isUserLogin($request);
         $goodModel= $this->newGoodModel();
         if ($userId) {
             $goodModel->executedOrderForLoginUser($userId);
+            return $response;
         }
         $registrationModel = $this->newRegistrationModel();
         $userId = $registrationModel->registrateNewUserByPhone($request->get('phone'));
         if (is_array($userId)) {
-            return $userId;
+            $response = Response::create('', 302, ['Location' => 'http://127.0.0.1/showBasket']);
+            $response->setContent(json_encode($userId));
+            return $response;
         }
         $basket =$goodModel->getProductsFromBasketForLogoutUser($request, false);
         $goodModel->executedOrderForLogoutUser($userId, $basket);
         return $goodModel->deleteProductFromBasketForLogoutUser($response);
+    }
+
+    /**
+     * @param Request $request
+     * @return array
+     */
+    public function showHistoryAction (Request $request) {
+        $userId = $this->newLoginModel()->isUserLogin($request);
+        if ($userId) {
+            return $this->newGoodModel()->getHistoryForLoginUser($userId);
+        }
+        $phoneNumber = $request->get('phone');
+        if (empty($phoneNumber)) {
+            return [];
+        }
+        return $this->newGoodModel()->getHistoryForLogoutUser($phoneNumber);
     }
 
 

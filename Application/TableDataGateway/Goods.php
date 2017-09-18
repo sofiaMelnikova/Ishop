@@ -164,7 +164,7 @@ class Goods
                 $query = "UPDATE `stoke` SET `stoke`.`kinds_id` = :kind, `stoke`.`count` = :count, `stoke`.`cost` = :cost, 
                   `stoke`.`picture` = :picture, `stoke`.`product_name` = :productName WHERE `stoke`.`id` = :id";
                 $forExecute = [':kind' => $product['kind'], ':count' => $product['count'], ':cost' => $product['cost'],
-                    ':picture' => $product['picture'], ':productName' => $product['productName'], ':id' => $product['id']];
+                    ':picture' => $product['picture'], ':productName' => $product['productName'], ':id' => $product['stokeId']];
             }
             $this->dataBase->changeData($query, $forExecute);
             $this->updateProductProperty('color', $product)->updateProductProperty('size', $product)
@@ -210,8 +210,8 @@ class Goods
                       `orders_item`.`actual_cost`) VALUES (:ordersId, :stokeId, :actualCost);";
             $forExecute = [':ordersId' => $ordersId, 'stokeId' => $value['id'],
                             ':actualCost' => $value['cost']];
+            $this->dataBase->changeData($query, $forExecute);
         }
-        $this->dataBase->changeData($query, $forExecute);
         $connection->commit();
     }
 
@@ -279,6 +279,10 @@ class Goods
         return $this->dataBase->getData($query, $forExecute);
     }
 
+    /**
+     * @param int $numberOrder
+     * @return array|mixed
+     */
     public function getCountProductsInBasket (int $numberOrder) {
         $query = "SELECT COUNT(*) FROM `orders_item` WHERE `orders_item`.`orders_id` = :ordersId";
         $forExecute = [':ordersId' => $numberOrder];
@@ -293,7 +297,8 @@ class Goods
         $connection = $this->dataBase->getConnection();
         $connection->beginTransaction();
         if (!empty($stokeId)) {
-            $query = "DELETE FROM `orders_item` WHERE `orders_item`.`orders_id` = :ordersId AND `orders_item`.`stoke_id` = :stokeId";
+            $query = "DELETE FROM `orders_item` WHERE `orders_item`.`orders_id` = :ordersId AND `orders_item`.`stoke_id` = :stokeId 
+            ORDER BY `orders_item`.`id` DESC LIMIT 1";
             $forExecute = [':ordersId' => $numberOrder, ':stokeId' => $stokeId];
             $this->dataBase->changeData($query, $forExecute);
         } else {
@@ -305,6 +310,18 @@ class Goods
             $this->dataBase->changeData($query, $forExecute);
         }
         $connection->commit();
+    }
+
+    /**
+     * @param int $userId
+     * @return array|mixed
+     */
+    public function getInfoForHistoryOrdersByUserId (int $userId) {
+        $query = "SELECT `orders_item`.`orders_id`, `stoke`.`product_name`, `orders_item`.`actual_cost`, `orders`.`executed_at`, 
+                  `stoke`.`picture` FROM `orders_item`, `stoke`, `orders` WHERE `orders_item`.`orders_id` = `orders`.`id`
+                  AND `orders`.`users_id` = :userId AND `stoke`.`id` = `orders_item`.`stoke_id`";
+        $forExecute = [':userId' => $userId];
+        return $this->dataBase->getData($query, $forExecute);
     }
 
 }
