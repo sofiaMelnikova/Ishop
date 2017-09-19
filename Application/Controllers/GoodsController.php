@@ -116,7 +116,8 @@ class GoodsController extends BaseController
         $userId = $this->newLoginModel()->isUserLogin($request);
         $goodModel= $this->newGoodModel();
         if ($userId) {
-            $goodModel->executedOrderForLoginUser($userId);
+            $numberOrder = $goodModel->getNumberOrdesInBasketForUser($userId);
+            $goodModel->executedOrderForLoginUser($numberOrder);
             return $response;
         }
         $registrationModel = $this->newRegistrationModel();

@@ -156,14 +156,14 @@ class Goods
         $connection = $this->dataBase->getConnection();
         $connection->beginTransaction();
         try {
-            $query = "UPDATE `stoke` SET `stoke`.`kinds_id` = :kind, `stoke`.`count` = :count, `stoke`.`cost` = :cost, 
-                 `stoke`.`product_name` = :productName WHERE `stoke`.`id` = :id";
-            $forExecute = [':kind' => $product['kind'], ':count' => $product['count'], ':cost' => $product['cost'],
+            $query = "UPDATE `stoke` SET `stoke`.`count` = :countProduct, `stoke`.`cost` = :cost,
+                 `stoke`.`product_name` = :productName WHERE `stoke`.`id` = :id;";
+            $forExecute = [':countProduct' => $product['count'], ':cost' => $product['cost'],
                 ':productName' => $product['productName'], ':id' => $product['stokeId']];
             if (!empty($product['picture'])) {
-                $query = "UPDATE `stoke` SET `stoke`.`kinds_id` = :kind, `stoke`.`count` = :count, `stoke`.`cost` = :cost, 
-                  `stoke`.`picture` = :picture, `stoke`.`product_name` = :productName WHERE `stoke`.`id` = :id";
-                $forExecute = [':kind' => $product['kind'], ':count' => $product['count'], ':cost' => $product['cost'],
+                $query = "UPDATE `stoke` SET `stoke`.`count` = :countProduct, `stoke`.`cost` = :cost, 
+                  `stoke`.`picture` = :picture, `stoke`.`product_name` = :productName WHERE `stoke`.`id` = :id;";
+                $forExecute = [':countProduct' => $product['count'], ':cost' => $product['cost'],
                     ':picture' => $product['picture'], ':productName' => $product['productName'], ':id' => $product['stokeId']];
             }
             $this->dataBase->changeData($query, $forExecute);
@@ -197,7 +197,7 @@ class Goods
      * @param int $userId
      * @param array $basket
      */
-    public function createAndExecuteNewOrder (int $userId, array $basket) { // last name: createNewOrder
+    public function createAndExecuteNewOrder (int $userId, array $basket) {
         $date = date("Y-m-d H:i");
         $query = "INSERT INTO `orders` (`orders`.`users_id`, `orders`.`create_at`, `orders`.`executed_at`, `orders`.`is_basket`)
                   VALUES (:usersId, :createAt, :executedAt, :isBasket);";

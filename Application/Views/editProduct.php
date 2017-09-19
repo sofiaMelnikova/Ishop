@@ -107,7 +107,7 @@
     </form>
 
     <form action="/deleteProduct" method="post" class="toInlineBlock">
-        <button type="submit" class="btn btn-danger" name="stokeId" value="{{product.id}}">Delete</button>
+        <button type="submit" class="btn btn-danger" name="id" value="{{product.id}}">Delete</button>
     </form>
 
     <a href="/adminGoods" type="button" class="btn btn-primary">For admin goods list</a>

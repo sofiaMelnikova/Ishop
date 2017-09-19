@@ -21,7 +21,6 @@ require __DIR__.'/../src/controllers.php';
 
 $app['session']->start();
 
-$app->register(new \Silex\Provider\TwigServiceProvider(), ['twig.path' => __DIR__ . '/../Application/Views']);
 
 $app->get('/registration', function () use ($app) {
    return $app['twig']->render('registration.php');

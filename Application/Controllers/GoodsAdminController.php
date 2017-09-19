@@ -75,8 +75,7 @@ class GoodsAdminController extends BaseController
      */
     public function changeProductAction (Request $request) {
         $stokeId = intval($request->get('id'));
-        $goodModel = $this->newGoodModel();
-        $product = $goodModel->getAllOfProduct($stokeId);
+        $product = $this->newGoodModel()->getAllOfProduct($stokeId);
         return ['product' => $product];
     }
 
