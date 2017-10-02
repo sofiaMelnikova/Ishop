@@ -11,6 +11,7 @@
 <body class="content">
     <form enctype="multipart/form-data" action="/saveChangeProduct" method="post">
         <input type="hidden" name="stokeId" value="{{product.id}}">
+
         <div><img class="photoProduct" src="{{product.picture}}"></div>
 
         <div class="form-group">

@@ -8,18 +8,16 @@
 
 namespace Application\Models;
 
-use Symfony\Component\HttpFoundation\Request;
+use Application\Controllers\BaseControllerAbstract;
 
-
-class Rules
+class Rules extends BaseControllerAbstract
 {
     /**
-     * @param Request $request
      * @return bool
      */
-    public function isLoginAdmin (Request $request) {
-        $loginModel = new LoginModel();
-        $id = $loginModel->isUserLogin($request);
+    public function isLoginAdmin () {
+        $loginModel = new LoginModel($this->app);
+        $id = $loginModel->isUserLogin($this->request);
         if (!$id || !($loginModel->isAdmin(intval($id)))) {
             return false;
         }

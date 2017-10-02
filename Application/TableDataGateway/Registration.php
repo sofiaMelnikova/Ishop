@@ -3,6 +3,7 @@
 namespace Application\TableDataGateway;
 
 use Engine\DbQuery;
+use PDO;
 class Registration
 {
     private $dataBase = null;
@@ -23,10 +24,10 @@ class Registration
      */
     public function saveNewUser (string $login, string $phone, string $passwordHash) {
         $query = "INSERT INTO `Ishop`.`users` (`login`, `phone`, `password_hash`) VALUES (:login, :phone, :passwordHash)";
-        $forExecute = ['login' => $login,
-            ':phone' => $phone,
-            'passwordHash' => $passwordHash];
-        $result = $this->dataBase->changeData($query, $forExecute);
+        $params = [':login' => ['value' => $login, 'type' => PDO::PARAM_STR],
+            ':phone' => ['value' => $phone, 'type' => PDO::PARAM_STR],
+            ':passwordHash' => ['value' => $passwordHash, 'type' => PDO::PARAM_STR]];
+        $result = $this->dataBase->insert($query, $params);
         return $result;
     }
 
@@ -36,8 +37,8 @@ class Registration
      */
     public function isLoginExist (string $login) {
         $query = "SELECT * FROM `Ishop`.`users` WHERE `login` = :login AND `is_delete` = 0";
-        $forExecute = [':login' => $login];
-        return $this->dataBase->getData($query, $forExecute, false);
+        $params = [':login' => ['value' => $login, 'type' => PDO::PARAM_STR]];
+        return $this->dataBase->select($query, $params, false);
 
     }
 
@@ -45,10 +46,10 @@ class Registration
      * @param string $phoneNumber
      * @return array|mixed
      */
-    public function isPhoneExist (string $phoneNumber) {
+    public function getUserByPhone (string $phoneNumber) {
         $query = "SELECT `users`.`id` FROM `users` WHERE `users`.`phone` = :phoneNumber";
-        $forExecute = [':phoneNumber' => $phoneNumber];
-        return $this->dataBase->getData($query, $forExecute, false);
+        $params = [':phoneNumber' => ['value' => $phoneNumber, 'type' => PDO::PARAM_STR]];
+        return $this->dataBase->select($query, $params, false);
     }
 
     /**
@@ -57,7 +58,7 @@ class Registration
      */
     public function addNewUserByPhone (string $phoneNumber) {
         $query = "INSERT INTO `users` (`phone`) VALUES (:phoneNumber)";
-        $forExecute = [':phoneNumber' => $phoneNumber];
-        return $this->dataBase->changeData($query, $forExecute);
+        $params = [':phoneNumber' => ['value' => $phoneNumber, 'type' => PDO::PARAM_STR]];
+        return $this->dataBase->insert($query, $params);
     }
 }

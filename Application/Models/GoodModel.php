@@ -2,37 +2,22 @@
 
 namespace Application\Models;
 
-
-use Application\Controllers\GoodsController;
 use Application\ValueObject\GoodFields;
-use Symfony\Component\HttpFoundation\File\UploadedFile;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpFoundation\Cookie;
-use Application\Helper;
 
 class GoodModel extends BaseModel
 {
 
     /**
      * @param string $picture
-     * @param GoodFields $goodFields
+     * @param array $property
+     * @param array $propertyKeys
      * @return bool
      */
-    public function addGood (string $picture, GoodFields $goodFields) {
-        return ($this->newGoods())->addGood($picture, $goodFields);
-    }
-
-    /**
-     * @param UploadedFile $file
-     * @return string
-     */
-    public function savePhoto (UploadedFile $file) {
-        $uploaddir = '/home/smelnikova/dev/my_shop.dev/web/pictures';
-        $uploadfile = time() . $file->getClientOriginalName();
-        $file->move($uploaddir, $uploadfile);
-        $filePath = 'pictures/' . $uploadfile;
-        return $filePath;
+    public function addGood (string $picture, array $property, array $propertyKeys) {
+        return ($this->newGoods())->addGood($picture, $property, $propertyKeys);
     }
 
     /**
@@ -80,10 +65,11 @@ class GoodModel extends BaseModel
 
     /**
      * @param array $product
+     * @param array $propertyKeys
      * @return bool
      */
-    public function updateProduct (array $product) {
-        return ($this->newGoods())->updateProduct($product);
+    public function updateProduct (array $product, array $propertyKeys) {
+        return ($this->newGoods())->updateProduct($product, $propertyKeys);
     }
 
     /**
@@ -327,7 +313,7 @@ class GoodModel extends BaseModel
      * @return array
      */
     public function getHistoryForLogoutUser (string $phoneNumber) {
-        $userId = $this->newRegistrationModel()->isPhoneExist($phoneNumber);
+        $userId = $this->newRegistrationModel()->getUserByPhone($phoneNumber);
         if (!$userId) {
             return ['error' => 'You have not orders.'];
         }

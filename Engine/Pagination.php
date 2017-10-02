@@ -3,6 +3,11 @@
 namespace Engine;
 
 
+use Application\Models\GoodModel;
+use Application\Models\LoginModel;
+use Silex\Application;
+use Symfony\Component\HttpFoundation\Request;
+
 class Pagination
 {
     /**
@@ -32,6 +37,7 @@ class Pagination
         if ($actualPage === 1) {
             return ['min' => 1, 'max' => $elementsOnPage];
         }
+
         $min = ($actualPage-1)*$elementsOnPage +1;
         $max = $actualPage*$elementsOnPage;
         return ['min' => $min, 'max' => $max];
@@ -49,6 +55,7 @@ class Pagination
         while ($find === false) {
             $actualPage++;
             $elements = $this->getMinMaxElementsOnPage($actualPage, $elementsOnPage);
+
             if ($actualElement >= $elements['min'] && $actualElement <= $elements['max']) {
                 $find = true;
             }
@@ -65,10 +72,56 @@ class Pagination
     public function getMainMaxPages (int $actualPage, int $countShowPages, int $sumPages) {
         $group = $this->getCountPagesOrGroups($actualPage, $countShowPages);
         $result = $this->getMinMaxElementsOnPage($group, $countShowPages);
+
         if ($result['max'] > $sumPages) {
             $result['max'] = $sumPages;
         }
+
         return $result;
+    }
+
+    /**
+     * @param int $page
+     * @param int $productsOnPage
+     * @param int $showPages
+     * @param Application $app
+     * @param Request|null $request
+     * @param string|null $kind
+     * @return array
+     */
+    public function showCatalog (int $page, int $productsOnPage, int $showPages, Application $app, Request $request = null, string $kind = null) {
+        $goodModel = new GoodModel($app);
+        $countProducts = $goodModel->getCountProducts($kind);
+        $countPages = $this->getCountPagesOrGroups($countProducts, $productsOnPage);
+
+        if ($page > $countPages) {
+            $page = $countPages;
+        }
+
+        $pagesMinMax = $this->getMainMaxPages($page, $showPages, $countPages);
+        $productsMinMax = $this->getMinMaxElementsOnPage($page, $productsOnPage);
+
+        if (is_null($kind)) {
+            $products = $goodModel->getPictureNameProduct($productsMinMax['min'], $productsOnPage);
+            return ['products' => $products, 'pages' => $pagesMinMax, 'sumPages' => $countPages];
+        }
+
+        $products = $goodModel->getNamePicturePriceOfKind($kind, $productsMinMax['min'], $productsOnPage);
+        $loginModel = new LoginModel($app);
+        $id = $loginModel->isUserLogin($request);
+        $admin = false;
+        $login = false;
+
+        if ($id) {
+            $countProductsInBasket = $goodModel->countProductsInBasketForLoginUser($id);
+            $admin = $loginModel->isAdmin($id);
+            $login = $loginModel->getLogin($id);
+        } else {
+            $countProductsInBasket = $goodModel->countProductsInBasketForLogoutUser($request);
+        }
+
+        return ['products' => $products, 'pages' => $pagesMinMax, 'kind' => $kind, 'sumPages' => $countPages,
+            'countProductsInBasket' => $countProductsInBasket, 'admin' => $admin, 'login' => $login];
     }
 
 }

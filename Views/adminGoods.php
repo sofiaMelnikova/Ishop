@@ -61,10 +61,6 @@
     <a href="/addGood?kind=jacket" type="button" class="btn btn-info" ">Add new jacket</a>
     <a href="/addGood?kind=plaid" type="button" class="btn btn-info" ">Add new plaid</a>
 
-<!--    <a href="/addGood/shoes" type="button" class="btn btn-info" ">Add new shoes</a>-->
-<!--    <a href="/addGood/jacket" type="button" class="btn btn-info" ">Add new jacket</a>-->
-<!--    <a href="/addGood/plaid" type="button" class="btn btn-info" ">Add new plaid</a>-->
-
 
     <a href="/catalogue" type="button" class="btn btn-primary">For uer catalog</a>
 </div>

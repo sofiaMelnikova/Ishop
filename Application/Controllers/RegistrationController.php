@@ -2,80 +2,37 @@
 
 namespace Application\Controllers;
 
-use Application\Models\LoginModel;
 use Silex\Application;
-use Symfony\Component\HttpFoundation\Request;
-use Application\Models\RegistrationModel;
-use Engine\DbQuery;
-use Engine\Validate;
+use Application\Validate\Validate;
 use Symfony\Component\HttpFoundation\Response;
 
-class RegistrationController extends BaseController
+class RegistrationController extends BaseControllerAbstract
 {
-    private $app = null;
-
     /**
-     * RegistrationController constructor.
-     * @param Application $app
+     * @return mixed
      */
-    public function __construct(Application $app) {
-        $this->app = $app;
+    public function renderRegistrationFormAction () {
+        return $this->render('registration.php');
     }
 
     /**
-     * @return RegistrationModel
+     * @return array|Response
      */
-    public  function newRegistrationModel() {
-        return new RegistrationModel();
-    }
-
-
-    /**
-     * @param Application $app
-     * @param Request $request
-     * @return array|static
-     */
-    public function addUserAction(Application $app, Request $request) {
-        $loginModel = new LoginModel();
-
-        $email = $request->get('email');
-        $passwordHash = password_hash($request->get('password'), PASSWORD_BCRYPT);
-        $phone = $request->get('phone');
-
-        $registrationModel = $this->newRegistrationModel();
-        $isUserExist = $registrationModel->isLoginExist($email);
-        if ($isUserExist) {
-            return ['error' => 'Error: User already exist whith this login.'];
-        }
+    public function addUserAction() {
+        $email = $this->request->request->get('email');
+        $passwordHash = password_hash($this->request->request->get('password'), PASSWORD_BCRYPT);
+        $phone = $this->request->request->get('phone');
 
         $validate = new Validate();
-        $result = $validate->isEmailValid($app, $email);
+        $errors = $validate->registrationFormValidate($this->app, ['email' => $email, 'phone' => $phone]);
 
-        if (!$result) {
-            return ['error' => 'Error: Login is not corrected.'];
+        if (!empty($errors)) {
+            return $this->render('registration.php', ['errors' => $errors]);
         }
 
-        if (!is_numeric($phone) || (strlen($phone) != 11)) {
-            return ['error' => 'Error: phone is not corrected. '];
-        }
-        // add method: user done order before only by number and this user want to registrate
-        $userId = $registrationModel->isPhoneExist($phone);
-        if ($userId) {
-            return ['error' => 'Error: phone already exist.'];
-        }
+        $userId = $this->app['registration.model']->saveNewUser($email, $phone, $passwordHash);
 
-        $registrationModel = $this->newRegistrationModel();
-        $userId = $registrationModel->saveNewUser($email, $phone, $passwordHash);
-        if ($userId === false) {
-            return ['error' => 'Error: new user was not created.'];
-        }
-
-        $response = Response::create('', 302, ['Location' => 'http://127.0.0.1/catalogue']);
-        $token = $loginModel->createTokenForUser();
-        $endTokenTime = date("Y-m-d H:i:s", strtotime('now + 60 minutes'));
-        $loginModel->addTokenForUser($token, $endTokenTime, $userId);
-        $response = $loginModel->createLoginCookie($token, $response);
-        return $response;
+        return $this->app['login.model']->loginUser(intval($userId), date("Y-m-d H:i:s", strtotime('now + 60 minutes')));
     }
 
 }

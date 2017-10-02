@@ -2,28 +2,21 @@
 
 namespace Application\Models;
 
-use ClassesWithParents\D;
+use Application\Helpers\RandomString;
 use Engine\DbQuery;
 use Application\TableDataGateway\Login;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
-use Application\Helper;
-class LoginModel
-{
-    /**
-     * @param DbQuery $dbQuery
-     * @return Login
-     */
-    public function newLogin (DbQuery $dbQuery) {
-        return new Login($dbQuery);
-    }
+use Application\Helpers\Helper;
 
+class LoginModel extends BaseModel
+{
     /**
      * @param string $token
      * @return bool|int
      */
     public function getUserIdByToket (string $token) {
-        $result = ($this->newLogin(new DbQuery()))->getUserIdByToken($token);
+        $result = $this->newLogin()->getUserIdByToken($token);
         if ($result) {
             return intval($result['id']);
         }
@@ -36,7 +29,7 @@ class LoginModel
      * @return bool|int
      */
     public function isUserExist (string $login, string $password) {
-        $user = ($this->newLogin(new DbQuery()))->isUserExist($login);
+        $user = $this->newLogin()->isUserExist($login);
         if (!$user) {
             return false;
         }
@@ -51,7 +44,7 @@ class LoginModel
      * @param Request $request
      * @return bool|int
      */
-    public function isUserLogin (Request $request) {
+    public function isUserLogin (Request $request):int {
         if (!key_exists('user', ($request->cookies->all()))) {
             return false;
         }
@@ -68,7 +61,7 @@ class LoginModel
      * @return bool
      */
     public function isAdmin (int $useId) {
-        $admin = ($this->newLogin(new DbQuery()))->isAdmin($useId);
+        $admin = $this->newLogin()->isAdmin($useId);
         $admin = array_shift($admin);
         if ($admin === '1') {
             return true;
@@ -93,7 +86,7 @@ class LoginModel
      * @return mixed
      */
     public function getLogin (int $userId) {
-        $result = ($this->newLogin(new DbQuery))->getLogin($userId);
+        $result = $this->newLogin()->getLogin($userId);
         return $result['login'];
     }
 
@@ -103,10 +96,9 @@ class LoginModel
     public function createTokenForUser () {
         $time = 1;
         while ($time <= 3) {
-            $helper = new Helper();
-            $randomString = $helper->generateRandomString();
-            $login = $this->newLogin(new DbQuery);
-            if (!($login->getUserIdByToken($randomString))) {
+            $randomString = new RandomString();
+            $randomString = $randomString->get();
+            if (!($this->newLogin()->getUserIdByToken($randomString))) {
                 return $randomString;
             }
             $time++;
@@ -120,7 +112,7 @@ class LoginModel
      * @param int $userId
      */
     public function addTokenForUser (string $token, string $endTokenTime, int $userId) {
-        ($this->newLogin(new DbQuery()))->addTokenForUser($token, $endTokenTime, $userId);
+        $this->newLogin()->addTokenForUser($token, $endTokenTime, $userId);
     }
 
     /**
@@ -128,6 +120,18 @@ class LoginModel
      */
     public function sendNowTimeForToken (string $token) {
         $nowTime = date("Y-m-d H:i:s", strtotime("now"));
-        ($this->newLogin(new DbQuery()))->updateTimeForToken($token, $nowTime);
+        $this->newLogin()->updateTimeForToken($token, $nowTime);
+    }
+
+    /**
+     * @param int $userId
+     * @param string $endTime
+     * @return Response
+     */
+    public function loginUser (int $userId, string $endTime) {
+        $response = Response::create('', 302, ['Location' => 'http://127.0.0.1/catalogue']);
+        $token = $this->createTokenForUser();
+        $this->addTokenForUser($token, $endTime, $userId);
+        return $this->createLoginCookie($token, $response);
     }
 }

@@ -3,7 +3,8 @@
 namespace Application\TableDataGateway;
 
 use Engine\DbQuery;
-use Application\ValueObject\GoodFields;
+use PDO;
+
 class Goods
 {
     private $dataBase = null;
@@ -19,23 +20,29 @@ class Goods
 
     /**
      * @param string $picture
-     * @param GoodFields $goodFields
+     * @param array $property
+     * @param array $propertyKeys
      * @return bool
      */
-    public function addGood (string $picture, GoodFields $goodFields) {
+    public function addGood (string $picture, array $property, array $propertyKeys) {
         $connection = $this->dataBase->getConnection();
         $connection->beginTransaction();
         try {
             $query = "SELECT `kinds`.`id` FROM `kinds` WHERE `kinds`.`kinds_value` = :kind;";
-            $forExecute = [':kind' => $goodFields->getKind()];
-            $kind = $this->dataBase->getData($query, $forExecute, false);
+            $params = [':kind' => ['value' => $property['kind'], 'type' => PDO::PARAM_STR]];
+            $kind = $this->dataBase->select($query, $params,false);
             $query = "INSERT INTO `stoke` (`kinds_id`, `count`, `cost`, `picture`, `product_name`)
                       VALUES (:kindsId, :count, :cost, :picture, :product_name);";
-            $forExecute = [':kindsId' => $kind['id'], ':count' => $goodFields->getCount(),
-                ':cost' => $goodFields->getCost(), ':picture' => $picture, ':product_name' => $goodFields->getProductName()];
-            $this->stokeId = $this->dataBase->changeData($query, $forExecute);
+            $params = [':kindsId' => ['value' => $kind['id'], 'type' => PDO::PARAM_INT],
+                ':count' => ['value' => $property['count'], 'type' => PDO::PARAM_INT],
+                ':cost' => ['value' => $property['cost'], 'type' => PDO::PARAM_INT],
+                ':picture' => ['value' => $picture, 'type' => PDO::PARAM_STR],
+                ':product_name' => ['value' => $property['productName'], 'type' => PDO::PARAM_STR]];
+            $this->stokeId = $this->dataBase->insert($query, $params);
 
-            $this->addProperties('color', $goodFields->getColor())->addProperties('size', $goodFields->getSize())->addProperties('material', $goodFields->getMaterial())->addProperties('gender', $goodFields->getGender());
+            foreach ($propertyKeys as $propertyName) {
+               $this->addProperties($propertyName, $property[$propertyName]);
+            }
 
             $connection->commit();
             return true;
@@ -54,8 +61,10 @@ class Goods
     private function addProperties (string $name, $value) {
         if (!empty($value)) {
             $query = "INSERT INTO `properties` (`key`, `value`, `stoke_id`) VALUES (:key, :value, :stoke_id);";
-            $forExecute = [':key' => $name, ':value' => $value, ':stoke_id' => $this->stokeId];
-            $this->dataBase->changeData($query, $forExecute);
+            $params = [':key' => ['value' => $name, 'type' => PDO::PARAM_STR],
+                ':value' => ['value' => $value, 'type' => PDO::PARAM_STR],
+                ':stoke_id' => ['value' => $this->stokeId, 'type' => PDO::PARAM_INT]];
+            $this->dataBase->insert($query, $params);
         }
         return $this;
     }
@@ -70,8 +79,8 @@ class Goods
         $query = "SELECT `stoke`.`id`, `stoke`.`product_name`, `stoke`.`picture`, `stoke`.`cost` FROM `stoke`, `kinds` 
                   WHERE `stoke`.`kinds_id`=`kinds`.`id` AND `stoke`.`is_delete` = 0 
                   AND `kinds`.`kinds_value` = :kind" . " LIMIT " . ($startElement-1) . ", " . $countElements;
-        $forExecute = [':kind' => $kind];
-        return $this->dataBase->getData($query, $forExecute);
+        $params = [':kind' => ['value' => $kind, 'type' => PDO::PARAM_STR]];
+        return $this->dataBase->select($query, $params);
     }
 
     /**
@@ -85,8 +94,8 @@ class Goods
             $query = "SELECT `stoke`.`id`, `kinds`.`kinds_value`, `stoke`.`product_name`, `stoke`.`picture`, 
                         `stoke`.`cost`, `stoke`.`count` FROM `stoke`, `kinds` 
                         WHERE `stoke`.`id` = :stokeId AND `stoke`.`kinds_id` = `kinds`.`id` AND `stoke`.`is_delete` = 0";
-            $forExecute = [':stokeId' => $idStoke];
-            $result = $this->dataBase->getData($query, $forExecute, false);
+            $params = [':stokeId' => ['value' => $idStoke, 'type' => PDO::PARAM_INT]];
+            $result = $this->dataBase->select($query, $params,false);
             $properties = $this->getProperties($idStoke);
             if ($properties) {
                 foreach ($properties as $property) {
@@ -108,8 +117,8 @@ class Goods
      */
     private function getProperties (int $stokeId) {
         $query = "SELECT `properties`.`key`, `properties`.`value` FROM `properties` WHERE `properties`.`stoke_id` = :stokeId;";
-        $forExecute =[':stokeId' => $stokeId];
-        return $this->dataBase->getData($query, $forExecute);
+        $params = [':stokeId' => ['value' => $stokeId, 'type' => PDO::PARAM_INT]];
+        return $this->dataBase->select($query, $params);
     }
 
     /**
@@ -120,11 +129,11 @@ class Goods
         if (!empty($kind)) {
             $query = "SELECT COUNT(*) FROM `stoke`, `kinds` WHERE `kinds`.`kinds_value` = :kind 
                       AND `stoke`.`kinds_id` = `kinds`.`id` AND `stoke`.`is_delete` = 0;";
-            $forExecute = [':kind' => $kind];
-            $result = $this->dataBase->getData($query, $forExecute, false);
+            $params = [':kind' => ['value' => $kind, 'type' => PDO::PARAM_STR]];
+            $result = $this->dataBase->select($query, $params,false);
         } else {
             $query = "SELECT COUNT(*) FROM `stoke` WHERE `stoke`.`is_delete` = 0;";
-            $result = $this->dataBase->getData($query, [], false);
+            $result = $this->dataBase->select($query, [],false);
         }
         return $result;
     }
@@ -136,7 +145,7 @@ class Goods
      */
     public function getPictureNameProduct (int $startElement, int $countElements) {
         $query = "SELECT `stoke`.`id`, `stoke`.`product_name`, `stoke`.`picture` FROM `stoke` WHERE `stoke`.`is_delete` = 0 LIMIT "  . ($startElement-1) . ", " . $countElements;
-        return $this->dataBase->getData($query);
+        return $this->dataBase->select($query);
     }
 
     /**
@@ -144,31 +153,38 @@ class Goods
      */
     public function deleteProduct (int $stokeId) {
         $query = "UPDATE `stoke` SET `stoke`.`is_delete` = '1' WHERE `stoke`.`id` = :id;";
-        $forExecute = [':id' => $stokeId];
-        $this->dataBase->changeData($query, $forExecute);
+        $params = [':id' => ['value' => $stokeId, 'type' => PDO::PARAM_INT]];
+        $this->dataBase->update($query, $params);
     }
 
     /**
      * @param array $product
+     * @param array $propertyKeys
      * @return bool
      */
-    public function updateProduct (array $product) {
+    public function updateProduct (array $product, array $propertyKeys) {
         $connection = $this->dataBase->getConnection();
         $connection->beginTransaction();
         try {
             $query = "UPDATE `stoke` SET `stoke`.`count` = :countProduct, `stoke`.`cost` = :cost,
                  `stoke`.`product_name` = :productName WHERE `stoke`.`id` = :id;";
-            $forExecute = [':countProduct' => $product['count'], ':cost' => $product['cost'],
-                ':productName' => $product['productName'], ':id' => $product['stokeId']];
+            $params = [':countProduct' => ['value' => $product['count'], 'type' => PDO::PARAM_INT],
+                ':cost' => ['value' => $product['cost'], 'type' => PDO::PARAM_INT],
+                ':productName' => ['value' => $product['productName'], 'type' => PDO::PARAM_STR],
+                ':id' => ['value' => $product['stokeId'], 'type' => PDO::PARAM_INT]];
             if (!empty($product['picture'])) {
                 $query = "UPDATE `stoke` SET `stoke`.`count` = :countProduct, `stoke`.`cost` = :cost, 
                   `stoke`.`picture` = :picture, `stoke`.`product_name` = :productName WHERE `stoke`.`id` = :id;";
-                $forExecute = [':countProduct' => $product['count'], ':cost' => $product['cost'],
-                    ':picture' => $product['picture'], ':productName' => $product['productName'], ':id' => $product['stokeId']];
+                $params = [':countProduct' => ['value' => $product['count'], 'type' => PDO::PARAM_INT],
+                    ':cost' => ['value' => $product['cost'], 'type' => PDO::PARAM_INT],
+                    ':picture' => ['value' => $product['picture'], 'type' => PDO::PARAM_STR],
+                    ':productName' => ['value' => $product['productName'], 'type' => PDO::PARAM_STR],
+                    ':id' => ['value' => $product['stokeId'], 'type' => PDO::PARAM_INT]];
             }
-            $this->dataBase->changeData($query, $forExecute);
-            $this->updateProductProperty('color', $product)->updateProductProperty('size', $product)
-                ->updateProductProperty('material', $product)->updateProductProperty('gender', $product);
+            $this->dataBase->update($query, $params);
+            foreach ($propertyKeys as $propertyKey) {
+                $this->updateProductProperty($propertyKey, $product);
+            }
             $connection->commit();
             return true;
         } catch (\PDOException $e) {
@@ -186,9 +202,10 @@ class Goods
         if (!empty($product[$nameProperty])) {
             $query = "UPDATE `properties` SET `properties`.`value` = :newValue 
                       WHERE `properties`.`key` = :nameProperty AND `properties`.`stoke_id` = :stokeId;";
-            $forExecute = [':newValue' => $product[$nameProperty], ':nameProperty' => $nameProperty,
-                            ':stokeId' => $product['stokeId']];
-            $this->dataBase->changeData($query, $forExecute);
+            $params = [':newValue' => ['value' => $product[$nameProperty], 'type' => PDO::PARAM_STR],
+                ':nameProperty' => ['value' => $nameProperty, 'type' => PDO::PARAM_STR],
+                ':stokeId' => ['value' => $product['stokeId'], 'type' => PDO::PARAM_INT]];
+            $this->dataBase->update($query, $params);
         }
         return $this;
     }
@@ -201,16 +218,20 @@ class Goods
         $date = date("Y-m-d H:i");
         $query = "INSERT INTO `orders` (`orders`.`users_id`, `orders`.`create_at`, `orders`.`executed_at`, `orders`.`is_basket`)
                   VALUES (:usersId, :createAt, :executedAt, :isBasket);";
-        $forExecute = [':usersId' => $userId, ':createAt' => $date, ':executedAt' => $date, 'isBasket' => 0];
+        $params = [':usersId' => ['value' => $userId, 'type' => PDO::PARAM_INT],
+            ':createAt' => ['value' => $date, 'type' => PDO::PARAM_STR],
+            ':executedAt' => ['value' => $date, 'type' => PDO::PARAM_STR],
+            ':isBasket' => ['value' => 0, 'type' => PDO::PARAM_INT]];
         $connection = $this->dataBase->getConnection();
         $connection->beginTransaction();
-        $ordersId = $this->dataBase->changeData($query, $forExecute);
+        $ordersId = $this->dataBase->insert($query, $params);
         foreach ($basket as $value) {
             $query = "INSERT INTO `orders_item` (`orders_item`.`orders_id`, `orders_item`.`stoke_id`,
                       `orders_item`.`actual_cost`) VALUES (:ordersId, :stokeId, :actualCost);";
-            $forExecute = [':ordersId' => $ordersId, 'stokeId' => $value['id'],
-                            ':actualCost' => $value['cost']];
-            $this->dataBase->changeData($query, $forExecute);
+            $params = [':ordersId' => ['value' => $ordersId, 'type' => PDO::PARAM_INT],
+                ':stokeId' => ['value' => $value['id'], 'type' => PDO::PARAM_INT],
+                ':actualCost' => ['value' => $value['cost'], 'type' => PDO::PARAM_INT]];
+            $this->dataBase->insert($query, $params);
         }
         $connection->commit();
     }
@@ -223,15 +244,17 @@ class Goods
     public function createNewOrder (int $userId, array $product) {
         $date = date("Y-m-d H:i:s");
         $query = "INSERT INTO `orders` (`orders`.`users_id`, `orders`.`create_at`) VALUES (:usersId, :createAt);";
-        $forExecute = ['usersId' => $userId, ':createAt' => $date];
+        $params = [':usersId' => ['value' => $userId, 'type' => PDO::PARAM_INT],
+            ':createAt' => ['value' => $date, 'type' => PDO::PARAM_STR]];
         $connection = $this->dataBase->getConnection();
         $connection->beginTransaction();
-        $ordersId = $this->dataBase->changeData($query, $forExecute);
+        $ordersId = $this->dataBase->insert($query, $params);
         $query = "INSERT INTO `orders_item` (`orders_item`.`orders_id`, `orders_item`.`stoke_id`,
         `orders_item`.`actual_cost`) VALUES (:ordersId, :stokeId, :actualCost);";
-        $forExecute = [':ordersId' => $ordersId, ':stokeId' => $product['id'],
-                        ':actualCost' => $product['cost']];
-        $this->dataBase->changeData($query, $forExecute);
+        $params = [':ordersId' => ['value' => $ordersId, 'type' => PDO::PARAM_INT],
+            ':stokeId' => ['value' => $product['id'], 'type' => PDO::PARAM_INT],
+            ':actualCost' => ['value' => $product['cost'], 'type' => PDO::PARAM_INT]];
+        $this->dataBase->insert($query, $params);
         $connection->commit();
         return $ordersId;
     }
@@ -242,8 +265,8 @@ class Goods
      */
     public function getNumberOrdesInBasketForUser (int $userId) {
         $query = "SELECT `orders`.`id` FROM `orders` WHERE `orders`.`users_id` = :userId AND `orders`.`is_basket` = 1;";
-        $forExecute = [':userId' => $userId];
-        return $this->dataBase->getData($query, $forExecute, false);
+        $params = [':userId' => ['value' => $userId, 'type' => PDO::PARAM_INT]];
+        return $this->dataBase->select($query, $params,false);
     }
 
     /**
@@ -253,8 +276,10 @@ class Goods
     public function addToOrderBasketProduct (int $numberOrder, array  $product) {
         $query = "INSERT INTO `orders_item` (`orders_item`.`orders_id`, `orders_item`.`stoke_id`, `orders_item`.`actual_cost`)
                   VALUES (:ordersId, :stokeId, :actualCost);";
-        $forExecute = [':ordersId' => $numberOrder, ':stokeId' => $product['id'], ':actualCost' => $product['cost']];
-        $this->dataBase->changeData($query, $forExecute);
+        $params = [':ordersId' => ['value' => $numberOrder, 'type' => PDO::PARAM_INT],
+            ':stokeId' => ['value' => $product['id'], 'type' => PDO::PARAM_INT],
+            ':actualCost' => ['value' => $product['cost'], 'type' => PDO::PARAM_INT]];
+        $this->dataBase->insert($query, $params);
     }
 
     /**
@@ -264,8 +289,9 @@ class Goods
         $date = date("Y-m-d H:i:s");
         $query = "UPDATE `orders` SET `orders`.`executed_at` = :executeDate, `orders`.`is_basket` = 0
                   WHERE `orders`.`id` = :numberOrder;";
-        $forExecute = [':executeDate' => $date, ':numberOrder' => $numberOrder];
-        $this->dataBase->changeData($query, $forExecute);
+        $params = [':executeDate' => ['value' => $date, 'type' => PDO::PARAM_STR],
+            ':numberOrder' => ['value' => $numberOrder, 'type' => PDO::PARAM_INT]];
+        $this->dataBase->update($query, $params);
     }
 
     /**
@@ -275,8 +301,8 @@ class Goods
     public function getProductsFromBasket (int $numberOrder) {
         $query = "SELECT `orders_item`.`stoke_id`, `orders_item`.`actual_cost`
                   FROM `orders_item` WHERE `orders_item`.`orders_id` = :ordersId";
-        $forExecute = [':ordersId' => $numberOrder];
-        return $this->dataBase->getData($query, $forExecute);
+        $params = [':ordersId' => ['value' => $numberOrder, 'type' => PDO::PARAM_INT]];
+        return $this->dataBase->select($query, $params);
     }
 
     /**
@@ -285,8 +311,8 @@ class Goods
      */
     public function getCountProductsInBasket (int $numberOrder) {
         $query = "SELECT COUNT(*) FROM `orders_item` WHERE `orders_item`.`orders_id` = :ordersId";
-        $forExecute = [':ordersId' => $numberOrder];
-        return $this->dataBase->getData($query, $forExecute, false);
+        $params = [':ordersId' => ['value' => $numberOrder, 'type' => PDO::PARAM_INT]];
+        return $this->dataBase->select($query, $params,false);
     }
 
     /**
@@ -299,15 +325,16 @@ class Goods
         if (!empty($stokeId)) {
             $query = "DELETE FROM `orders_item` WHERE `orders_item`.`orders_id` = :ordersId AND `orders_item`.`stoke_id` = :stokeId 
             ORDER BY `orders_item`.`id` DESC LIMIT 1";
-            $forExecute = [':ordersId' => $numberOrder, ':stokeId' => $stokeId];
-            $this->dataBase->changeData($query, $forExecute);
+            $params = [':ordersId' => ['value' => $numberOrder, 'type' => PDO::PARAM_INT],
+                ':stokeId' => ['value' => $stokeId, 'type' => PDO::PARAM_INT]];
+            $this->dataBase->delete($query, $params);
         } else {
             $query = "DELETE FROM `orders_item` WHERE `orders_item`.`orders_id` = :ordersId";
-            $forExecute = [':ordersId' => $numberOrder];
-            $this->dataBase->changeData($query, $forExecute);
+            $params = [':ordersId' => ['value' => $numberOrder, 'type' => PDO::PARAM_INT]];
+            $this->dataBase->delete($query, $params);
             $query = "DELETE FROM `orders` WHERE `orders`.`id` = :id";
-            $forExecute = [':id' => $numberOrder];
-            $this->dataBase->changeData($query, $forExecute);
+            $params = [':id' => ['value' => $numberOrder, 'type' => PDO::PARAM_INT]];
+            $this->dataBase->delete($query, $params);
         }
         $connection->commit();
     }
@@ -320,8 +347,8 @@ class Goods
         $query = "SELECT `orders_item`.`orders_id`, `stoke`.`product_name`, `orders_item`.`actual_cost`, `orders`.`executed_at`, 
                   `stoke`.`picture` FROM `orders_item`, `stoke`, `orders` WHERE `orders_item`.`orders_id` = `orders`.`id`
                   AND `orders`.`users_id` = :userId AND `stoke`.`id` = `orders_item`.`stoke_id`";
-        $forExecute = [':userId' => $userId];
-        return $this->dataBase->getData($query, $forExecute);
+        $params = [':userId' => ['value' => $userId, 'type' => PDO::PARAM_INT]];
+        return $this->dataBase->select($query, $params);
     }
 
 }

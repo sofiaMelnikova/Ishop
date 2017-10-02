@@ -4,16 +4,11 @@ namespace Application\Models;
 
 use Engine\DbQuery;
 use Application\TableDataGateway\Registration;
-class RegistrationModel
-{
-    /**
-     * @param DbQuery $dbQuery
-     * @return Registration
-     */
-    public function newRegistration (DbQuery $dbQuery) {
-        return new Registration($dbQuery);
-    }
+use Application\Validate\Validate;
+use Silex\Application;
 
+class RegistrationModel extends BaseModel
+{
     /**
      * @param string $login
      * @param string $phone
@@ -21,7 +16,7 @@ class RegistrationModel
      * @return bool|string
      */
     public function saveNewUser (string $login, string $phone, string $passwordHash) {
-        return ($this->newRegistration(new DbQuery()))->saveNewUser($login, $phone, $passwordHash);
+        return $this->newRegistration()->saveNewUser($login, $phone, $passwordHash);
     }
 
 
@@ -30,7 +25,7 @@ class RegistrationModel
      * @return bool
      */
     public function isLoginExist (string $login) {
-        $result = ($this->newRegistration(new DbQuery()))->isLoginExist($login);
+        $result = $this->newRegistration()->isLoginExist($login);
         if (empty($result)) {
             return false;
         }
@@ -39,12 +34,12 @@ class RegistrationModel
 
     /**
      * @param string $phoneNumber
-     * @return bool|int
+     * @return int
      */
-    public function isPhoneExist (string $phoneNumber) {
-        $userId = $this->newRegistration(new DbQuery())->isPhoneExist($phoneNumber)['id'];
+    public function getUserByPhone (string $phoneNumber):int {
+        $userId = $this->newRegistration()->getUserByPhone($phoneNumber)['id'];
         if (empty($userId)) {
-            return false;
+            return 0;
         }
         return intval($userId);
     }
@@ -54,19 +49,22 @@ class RegistrationModel
      * @return int
      */
     public function addNewUserByPhone (string  $phoneNumber) {
-        $userId = $this->newRegistration(new DbQuery())->addNewUserByPhone($phoneNumber);
+        $userId = $this->newRegistration()->addNewUserByPhone($phoneNumber);
         return intval($userId);
     }
 
     /**
+     * @param Application $app
      * @param string $phoneNumber
-     * @return array|int
+     * @return array|bool|int
      */
-    public function registrateNewUserByPhone (string $phoneNumber) {
-        if (!is_numeric($phoneNumber) || (strlen($phoneNumber) != 11)) {
-            return ['error' => 'Error: phone is not corrected.'];
+    public function registrateNewUserByPhone (Application $app, string $phoneNumber) {
+        $validate = new Validate();
+        $errors = $validate->phoneValidate($app, ['phone' => $phoneNumber]);
+        if (!empty($errors)) {
+            return ['errors' => $errors];
         }
-        $userId = $this->isPhoneExist($phoneNumber);
+        $userId = $this->getUserByPhone($phoneNumber);
         if ($userId) {
             return $userId;
         }

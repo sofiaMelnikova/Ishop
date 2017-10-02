@@ -3,6 +3,7 @@
 namespace Application\TableDataGateway;
 
 use Engine\DbQuery;
+use PDO;
 class Login
 {
     public $dataBase = null;
@@ -21,8 +22,8 @@ class Login
      */
     public function isUserExist (string $login) {
         $query = "SELECT * FROM `Ishop`.`users` WHERE `login` = :login AND `is_delete` = 0";
-        $forExecute = [':login' => $login];
-        return $this->dataBase->getData($query, $forExecute, false);
+        $params = [':login' => ['value' => $login, 'type' => PDO::PARAM_STR]];
+        return $this->dataBase->select($query, $params, false);
     }
 
     /**
@@ -31,8 +32,8 @@ class Login
      */
     public function isAdmin (int $userId) {
         $query = "SELECT `users`.`admin` FROM `users` WHERE `users`.`id` = :userId;";
-        $forExecute = [':userId' => $userId];
-        return $this->dataBase->getData($query, $forExecute, false);
+        $params = [':userId' => ['value' => $userId, 'type' => PDO::PARAM_INT]];
+        return $this->dataBase->select($query, $params, false);
     }
 
     /**
@@ -41,8 +42,8 @@ class Login
      */
     public function getLogin (int $userId) {
         $query = "SELECT `users`.`login` FROM `users` WHERE `users`.`id` = :userId;";
-        $forExecute = [':userId' => $userId];
-        return $this->dataBase->getData($query, $forExecute, false);
+        $params = [':userId' => ['value' => $userId, 'type' => PDO::PARAM_INT]];
+        return $this->dataBase->select($query, $params, false);
     }
 
     /**
@@ -52,8 +53,8 @@ class Login
     public function getUserIdByToken (string $token) {
         $now = date("Y-m-d H:i:s", strtotime('now'));
         $query = "SELECT `users`.`id` FROM `users` WHERE `users`.`token` = :token AND `users`.`token_end` > :now;";
-        $forExecute = [':token' => $token, ':now' => $now];
-        return $this->dataBase->getData($query, $forExecute, false);
+        $params = [':token' => ['value' => $token, 'type' => PDO::PARAM_STR], ':now' => ['value' => $now, 'type' => PDO::PARAM_STR]];
+        return $this->dataBase->select($query, $params, false);
     }
 
     /**
@@ -63,8 +64,10 @@ class Login
      */
     public function addTokenForUser (string $token, string $endTimeToken, int $userId) {
         $query = "UPDATE `users` SET `users`.`token` = :token, `users`.`token_end` = :endTime WHERE `users`.`id` = :id;";
-        $forExecute = [':token' => $token, ':endTime' => $endTimeToken, ':id' => $userId];
-        $this->dataBase->changeData($query, $forExecute);
+        $params = [':token' => ['value' => $token, 'type' => PDO::PARAM_STR],
+            ':endTime' => ['value' => $endTimeToken, 'type' => PDO::PARAM_STR],
+            ':id' => ['value' => $userId, 'type' => PDO::PARAM_INT]];
+        $this->dataBase->update($query, $params);
     }
 
     /**
@@ -73,8 +76,9 @@ class Login
      */
     public function updateTimeForToken (string $token, string $time) {
         $query = "UPDATE `users` SET `users`.`token_end` = :newTime WHERE `users`.`token` = :token;";
-        $forExecute = [':newTime' => $time, ':token' => $token];
-        $this->dataBase->changeData($query, $forExecute);
+        $params = [':newTime' => ['value' => $time, 'type' => PDO::PARAM_STR],
+            ':token' => ['value' => $token, 'type' => PDO::PARAM_STR]];
+        $this->dataBase->update($query, $params);
     }
 
 }

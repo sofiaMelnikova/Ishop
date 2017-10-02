@@ -1,21 +1,24 @@
 <?php
+/**
+ * Created by PhpStorm.
+ * User: smelnikova
+ * Date: 25.09.17
+ * Time: 18:36
+ */
 
 namespace Application\ValueObject;
 
 use Symfony\Component\HttpFoundation\Request;
 
-class GoodFields
+class PlaidFields
 {
     private $stokeId = null;
     private $kind = null;
     private $productName = null;
-    private $brand = null;
     private $color =null;
-    private $size = null;
-    private $material = null;
-    private $gender = null;
     private $length = null;
     private $width = null;
+    private $material = null;
     private $producer = null;
     private $count = null;
     private $cost = null;
@@ -25,7 +28,7 @@ class GoodFields
      * @param Request $request
      */
     public function __construct(Request $request) {
-        $keys = ['stokeId', 'kind', 'productName', 'brand', 'color', 'size', 'material', 'gender', 'length', 'width', 'producer', 'count' ,'cost'];
+        $keys = ['stokeId', 'kind', 'productName', 'color', 'length', 'width', 'material', 'producer', 'count' ,'cost'];
         foreach ($keys as $key) {
             $this->$key = $this->forConstruct($request, $key);
         }
@@ -38,33 +41,34 @@ class GoodFields
      *
      */
     private function forConstruct (Request $request, string $key) {
-        if ($request->request->has($key)) {
-            $product = $request->get($key);
-            if (empty($product)) {
-                return null;
-            }
-            return $product;
+        $product = $request->request->get($key);
+        if (empty($product)) {
+            return null;
         }
-        return '';
+        return $product;
     }
 
     /**
      * @return array
      */
-    public  function getAllfields () {
+    public  function getAllFields () {
         return ['stokeId' => $this->stokeId,
             'kind' => $this->kind,
             'productName' => $this->productName,
-            'brand' => $this->brand,
             'color' => $this->color,
-            'size' => $this->size,
             'material' => $this->material,
-            'gender' => $this->gender,
             'length' => $this->length,
             'width' => $this->width,
             'producer' => $this->producer,
             'count' => $this->count,
             'cost' => $this->cost];
+    }
+
+    /**
+     * @return array
+     */
+    public function getPropertiesKeys ():array {
+        return ['color', 'material', 'length', 'width', 'producer'];
     }
 
     /**
@@ -91,22 +95,8 @@ class GoodFields
     /**
      * @return null|string
      */
-    public function getSize () {
-        return $this->size;
-    }
-
-    /**
-     * @return null|string
-     */
     public function getMaterial () {
         return $this->material;
-    }
-
-    /**
-     * @return null|string
-     */
-    public function getGender () {
-        return $this->gender;
     }
 
     /**
@@ -135,13 +125,6 @@ class GoodFields
      */
     public function getLength () {
         return $this->length;
-    }
-
-    /**
-     * @return null|string
-     */
-    public function getBrand () {
-        return $this->brand;
     }
 
     /**

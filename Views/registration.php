@@ -52,8 +52,9 @@
 </form>
 
 <div>
+    {{error}}
     {% for error in errors %}
-    <div>Error: {{error}}</div>
+    <div>{{error}}</div>
     {% endfor %}
 </div>
 

@@ -47,10 +47,6 @@
     <button href="/createOrder" type="submit" class="btn btn-success">Create order on {{resultSum}}$</button>
 </form>
 <a href="/catalogue" type="button" class="btn btn-primary">Catalogue</a>
-
-{% for error in errors %}
-    <div>Error: {{ error }}</div>
-{% endfor %}
-
+{{ error }}
 </body>
 </html>

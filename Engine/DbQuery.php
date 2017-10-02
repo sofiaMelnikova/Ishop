@@ -8,53 +8,115 @@
 
 namespace Engine;
 
-
 class DbQuery
 {
-    private $dbConnection = null;
-    private $dsn = "mysql:dbname=Ishop;host=127.0.0.1";
-    private $user = "root";
-    private $password = "qwerty133";
+    /**
+     * @var \PDO
+     */
+    private $dbh;
 
     /**
-     * @return null|\PDO
+     * DbQuery constructor.
+     * @param string $dbName
+     * @param string $host
+     * @param string $user
+     * @param string $password
      */
-    public function getConnection() {
-        if (empty($dbConnections)) {
-            return $this->dbConnection = new \PDO($this->dsn, $this->user, $this->password);
-        }
-        return $this->dbConnection;
+    public function __construct(string $dbName, string $host = '127.0.0.1', string $user, string $password) {
+        $this->dbh = new \PDO('mysql:dbname=' . $dbName . ';host=' . $host, $user, $password);
+        $this->dbh->setAttribute(\PDO::ATTR_DEFAULT_FETCH_MODE, \PDO::FETCH_ASSOC);
+        $this->dbh->setAttribute(\PDO::ATTR_ERRMODE, \PDO::ERRMODE_EXCEPTION);
+    }
+
+    /**
+     * @return \PDO
+     */
+    public function getConnection () {
+        return $this->dbh;
     }
 
     /**
      * @param string $query
-     * @param array $forExecute
+     * @param array $params
      * @param bool $fetchAll
-     * @return array|mixed
+     * @return array
      */
-    public function getData (string $query, array $forExecute = [], $fetchAll = true) {
-        $connection = $this->getConnection();
-        $request = $connection->prepare($query);
-        $request->execute($forExecute);
+    public function select (string $query, array $params = [], bool $fetchAll = true):array {
+        $sth = $this->dbh->prepare($query);
+
+        $sth = $this->execute($sth, $params);
+
+        $sth->execute();
+
         if ($fetchAll) {
-            return $request->fetchAll(\PDO::FETCH_ASSOC);
+            return $sth->fetchAll();
         }
-        return $request->fetch(\PDO::FETCH_ASSOC);
+
+        return ($result = $sth->fetch()) ? $result : [];
     }
 
     /**
      * @param string $query
-     * @param array $forExecute
-     * @return bool|string
+     * @param array $params
+     * @return int
      */
-    public function changeData (string $query, array $forExecute = []) {
-        $connection = $this->getConnection();
-        $request = $connection->prepare($query);
-        $result = $request->execute($forExecute);
-        if (!$result) {
-            return false;
-        }
-        return $connection->lastInsertId();
+    public function update (string $query, array $params = []) {
+        $sth = $this->dbh->prepare($query);
+
+        $sth = $this->execute($sth, $params);
+
+        $sth->execute();
+        return $sth->rowCount();
     }
 
+    /**
+     * @param string $query
+     * @param array $params
+     * @return int
+     */
+    public function delete (string $query, array $params = []) {
+        $sth = $this->dbh->prepare($query);
+
+        $sth = $this->execute($sth, $params);
+
+        $sth->execute();
+        return $sth->rowCount();
+    }
+
+    /**
+     * @param string $query
+     * @param array $params
+     * @return int
+     */
+    public function insert (string $query, array $params = []):int {
+        $sth = $this->dbh->prepare($query);
+
+        $result = $this->execute($sth, $params)->execute();
+
+        if (!$result) {
+            return 0;
+        }
+
+        return intval($this->dbh->lastInsertId());
+    }
+
+    /**
+     * @param \PDOStatement $sth
+     * @param array $params
+     * @return \PDOStatement
+     */
+    private function execute (\PDOStatement $sth, array $params) {
+        if (empty($params)) {
+            return $sth;
+        }
+
+        foreach ($params as $key => $value) {
+            if (!empty($value['value'])) {
+                $value['type'] = (empty($value['type'])) ? (\PDO::PARAM_STR) : $value['type'];
+                $sth->bindValue($key, $value['value'], $value['type']);
+            }
+        }
+
+        return $sth;
+    }
 }

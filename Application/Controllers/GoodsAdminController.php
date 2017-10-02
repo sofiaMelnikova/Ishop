@@ -3,114 +3,115 @@
 namespace Application\Controllers;
 
 use Silex\Application;
-use Symfony\Component\HttpFoundation\Request;
-use Engine\Validate;
-use Application\ValueObject\GoodFields;
+use Application\Validate\Validate;
 use Engine\Pagination;
+use Symfony\Component\HttpFoundation\Response;
 
-class GoodsAdminController extends BaseController
+class GoodsAdminController extends BaseControllerAbstract
 {
     private $productsOnPageAdmin = 4;
     private $showPagesAdmin = 3;
 
     /**
-     * @param Request $request
-     * @param string|null $kind
-     * @return array
+     * @return Response
      */
-    public function showFormAddGood (Request $request, string $kind = null) {
-        if (empty($kind)) {
-            $kind = $request->get('kind');
-        }
-        $goodModel = $this->newGoodModel();
-        $properties = $goodModel->getFieldsByKindForAddForm($kind);
-        return ['properties' => $properties];
+    public function showFormAddGood () {
+        $kind = $this->request->query->get('kind');
+        return $this->render('add' . ucfirst($kind) . '.php');
     }
 
     /**
-     * @param Application $app
-     * @param Request $request
-     * @return array|string
+     * @return Response
      */
-    public function addGoodAction (Application $app, Request $request) {
-        $goodFields = new GoodFields($request);
+    public function addGoodAction () {
+        $kind = $this->request->request->get('kind');
         $validate = new Validate();
-        $goodModel = $this->newGoodModel();
-        $result = $validate->formValidate($app, $goodFields->getAllfields());
+        $productFields = $this->app[$kind . '.fields'];
+        $methodValidate = ($kind . 'FormValidate');
+        $result = $validate->$methodValidate($this->app, $productFields->getAllFields());
+
         if (!empty($result)) {
-            $properties = $goodModel->getFieldsByKindForAddForm($goodFields->getKind());
-            $allFields = $goodFields->getAllfields();
-            return ['properties' => $properties, 'product' => $allFields, 'error' => $result];
+            return $this->render('add' . ucfirst($kind) . '.php', ['product' => $productFields->getAllFields(), 'error' => $result]);
         }
-        $file = $request->files->get('photo');
+
+        $file = $this->request->files->get('photo');
         $filePath = 'pictures/addPhoto.png';
+
         if (!empty($file)) {
-            $filePath = $goodModel->savePhoto($file);
+            $errors = $validate->imageValidate($this->app, ['picture' => $file]);
+
+            if (!empty($errors)) {
+                return $this->render('add' . ucfirst($kind) . '.php', ['product' => $productFields->getAllFields(), 'error' => $errors]);
+            }
+            $filePath = 'pictures/' . ($this->app['uploader.helper']->upload($file, '/home/smelnikova/dev/my_shop.dev/web/pictures'));
         }
-        $goodModel->addGood($filePath, $goodFields);
-        return [];
+
+        $this->app['good.model']->addGood($filePath, $productFields->getAllFields(), $productFields->getPropertiesKeys());
+        return Response::create('', 302, ['Location' => 'http://127.0.0.1/adminGoods']);
     }
 
     /**
-     * @param int $actualPage
-     * @return array
+     * @param int $page
+     * @return mixed
      */
-    public function showAdminGoodsAction (int $actualPage) {
-        $goodModel = $this->newGoodModel();
-        $countProducts = $goodModel->getCountProducts();
-        $pagination = new Pagination();
-        $countPages = $pagination->getCountPagesOrGroups($countProducts, $this->productsOnPageAdmin);
-        if ($actualPage > $countPages) {
-            $actualPage = $countPages;
-        }
-        $pagesMinMax = $pagination->getMainMaxPages($actualPage, $this->showPagesAdmin, $countPages);
-        $productsMinMax = $pagination->getMinMaxElementsOnPage($actualPage, $this->productsOnPageAdmin);
-        $products = $goodModel->getPictureNameProduct($productsMinMax['min'], $this->productsOnPageAdmin);
-        return ['products' => $products, 'pages' => $pagesMinMax, 'sumPages' => $countPages];
+    public function showAdminGoodsAction (int $page) {
+        $result = (new Pagination())->showCatalog($page, $this->productsOnPageAdmin, $this->showPagesAdmin, $this->app);
+        return $this->render('adminGoods.php', $result);
     }
 
     /**
-     * @param Request $request
-     * @return array
+     * @return Response
      */
-    public function changeProductAction (Request $request) {
-        $stokeId = intval($request->get('id'));
-        $product = $this->newGoodModel()->getAllOfProduct($stokeId);
-        return ['product' => $product];
+    public function changeProductAction () {
+        $stokeId = intval($this->request->query->get('id'));
+        $product = $this->app['good.model']->getAllOfProduct($stokeId);
+        return $this->render('add' . ucfirst($product['kinds_value']) . '.php', ['product' => $product, 'editProduct' => true]);
     }
 
     /**
-     * @param Request $request
+     * @return Response;
      */
-    public function deleteProductAction (Request $request) {
-        $stokeId = intval($request->get('id'));
-        $goodModel = $this->newGoodModel();
-        $goodModel->deleteProduct($stokeId);
+    public function deleteProductAction () {
+        $stokeId = intval($this->request->request->get('id'));
+        $this->app['good.model']->deleteProduct($stokeId);
+        return Response::create('', 302, ['Location' => 'http://127.0.0.1/adminGoods']);
     }
 
     /**
-     * @param Application $app
-     * @param Request $request
-     * @return array|string
+     * @return Response
      */
-    public function saveChangeProductAction (Application $app, Request $request) {
-        $goodFields = new GoodFields($request);
+    public function saveChangeProductAction () {
+        $kind = $this->request->request->get('kind');
         $validate = new Validate();
-        $goodModel = $this->newGoodModel();
-        $result = $validate->formValidate($app, $goodFields->getAllfields());
+
+        $productFields = $this->app[$kind . '.fields'];
+        $methodValidate = ($kind . 'FormValidate');
+        $result = $validate->$methodValidate($this->app, $productFields->getAllFields());
+
         if (!empty($result)) {
-            $result = array_merge($goodFields->getAllfields(), ['error' => $result, 'product' => $goodModel->getAllOfProduct(intval($goodFields->getStokeId()))]);
-            return $result;
+
+            $result = ['error' => $result,
+                'product' => $this->app['good.model']->getAllOfProduct(intval($productFields->getStokeId())),
+                'editProduct' => true];
+
+            return $this->render('add' . ucfirst($kind) . '.php', $result);
         }
-        $file = $request->files->get('photo');
+
+        $file = $this->request->files->get('photo');
         $filePath = '';
+
         if (!empty($file)) {
-            $filePath = $goodModel->savePhoto($file);
+            $errors = $validate->imageValidate($this->app, ['picture' => $file]);
+            if (!empty($errors)) {
+                return $this->render('add' . ucfirst($kind) . '.php', ['product' => $productFields->getAllFields(), 'error' => $errors]);
+            }
+            $filePath = 'pictures/' . ($this->app['uploader.helper']->upload($file, '/home/smelnikova/dev/my_shop.dev/web/pictures'));
         }
-        $product = $goodFields->getAllfields();
-        $product = array_merge($product, ['picture' => $filePath]);
-        $goodModel->updateProduct($product);
-        return ['product' => $goodModel->getAllOfProduct(intval($goodFields->getStokeId()))];
+
+        $product = array_merge($productFields->getAllFields(), ['picture' => $filePath]);
+        $this->app['good.model']->updateProduct($product, $productFields->getPropertiesKeys());
+        $result = ['product' => $this->app['good.model']->getAllOfProduct(intval($productFields->getStokeId())), 'editProduct' => true];
+        return $this->render('add' . ucfirst($kind) . '.php', $result);
     }
 
 
