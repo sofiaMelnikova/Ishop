@@ -54,11 +54,45 @@ class Registration
 
     /**
      * @param string $phoneNumber
+     * @return array
+     */
+    public function getUnregisteredUserByPhone (string $phoneNumber) {
+        $query = "SELECT `users`.`id` FROM `users` WHERE `users`.`phone` = :phoneNumber AND `users`.`login` IS NULL AND `users`.`password_hash` IS NULL";
+        $params = [':phoneNumber' => ['value' => $phoneNumber, 'type' => PDO::PARAM_STR]];
+        return $this->dataBase->select($query, $params, false);
+    }
+
+    /**
+     * @param string $phoneNumber
+     * @return array
+     */
+    public function getRegistretedUserByPhone (string $phoneNumber) {
+        $query = "SELECT `users`.`id` FROM `users` WHERE `users`.`phone` = :phoneNumber AND `users`.`login` IS NOT NULL AND `users`.`password_hash` IS NOT NULL";
+        $params = [':phoneNumber' => ['value' => $phoneNumber, 'type' => PDO::PARAM_STR]];
+        return $this->dataBase->select($query, $params, false);
+    }
+
+    /**
+     * @param string $phoneNumber
      * @return bool|string
      */
     public function addNewUserByPhone (string $phoneNumber) {
         $query = "INSERT INTO `users` (`phone`) VALUES (:phoneNumber)";
         $params = [':phoneNumber' => ['value' => $phoneNumber, 'type' => PDO::PARAM_STR]];
         return $this->dataBase->insert($query, $params);
+    }
+
+    /**
+     * @param array $user
+     * @return int
+     */
+    public function updateLoginPasswordPhone (array $user) {
+        $query = "UPDATE `users` SET `users`.`login` = :login, `users`.`password_hash` = :passwordHash, `users`.`phone` = :phone 
+                  WHERE `users`.`id` = :id";
+        $params = [':id' => ['value' => $user['id'], 'type' => PDO::PARAM_INT],
+            ':login' => ['value' => $user['email'], 'type' => PDO::PARAM_STR],
+            ':passwordHash' => ['value' => $user['passwordHash'], 'type' => PDO::PARAM_STR],
+            ':phone' => ['value' => $user['phone'], 'type' => PDO::PARAM_STR]];
+        return $this->dataBase->update($query, $params);
     }
 }

@@ -25,6 +25,8 @@
         <input name="photo" type="file" />
 {% endif %}
 
+    <input type="hidden" name="csrfToken" value="{{csrfToken}}">
+
     <div class="form-group">
         <label class="mr-sm-2" for="inlineFormCustomSelect">You add Jacket</label>
         <input class="form-control" name="kind" value="jacket" type="hidden">
@@ -88,6 +90,7 @@
 
         {% if editProduct is defined %}
         <form action="/deleteProduct" method="post" class="toInlineBlock">
+            <input type="hidden" name="csrfToken" value="{{csrfToken}}">
             <button type="submit" class="btn btn-danger" name="id" value="{{product.id}}">Delete</button>
         </form>
 

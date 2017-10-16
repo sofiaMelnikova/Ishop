@@ -7,7 +7,7 @@
     <link rel="stylesheet" href="css/styles.css">
 </head>
 <body>
-<form class="form-horizontal" action="http://127.0.0.1/registration" method="post">
+<form class="form-horizontal" action="/restoringPassword" method="post">
 
     <input type="hidden" name="csrfToken" value="{{csrfToken}}">
 
@@ -24,22 +24,6 @@
             </div>
         </div>
 
-        <!-- Text input-->
-        <div class="form-group">
-            <label class="col-md-4 control-label" for="email">Number</label>
-            <div class="col-md-4">
-                <input name="phone" type="number" placeholder="88003330033" class="form-control input-md" required="">
-            </div>
-        </div>
-
-        <!-- Text input-->
-        <div class="form-group">
-            <label class="col-md-4 control-label" for="email">Password</label>
-            <div class="col-md-4">
-                <input name="password" type="password" placeholder="Password" class="form-control input-md" required="">
-            </div>
-        </div>
-
         <!-- Button -->
         <div class="form-group">
             <label class="col-md-4 control-label" for="submit"></label>
@@ -51,11 +35,7 @@
     </fieldset>
 </form>
 
-<div>
-    {% for error in errors %}
-    <div>Error: {{error}}</div>
-    {% endfor %}
-</div>
+<div>{{error}}</div>
 
 </body>
 </html>

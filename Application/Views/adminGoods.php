@@ -35,7 +35,12 @@
             <td><img class="photoProduct" src="../{{product.picture}}"></td>
             <td>{{product.product_name}}</td>
             <td><a type="button" class="btn btn-primary" href="/editProduct?id={{product.id}}">Edit</a></td>
-            <td><form method="post" action="/deleteProduct"><button type="submit" class="btn btn-danger" name="id" value="{{product.id}}">Delete</button></form></td>
+            <td>
+                <form method="post" action="/deleteProduct">
+                    <input type="hidden" name="csrfToken" value="{{csrfToken}}">
+                    <button type="submit" class="btn btn-danger" name="id" value="{{product.id}}">Delete</button>
+                </form>
+            </td>
         </tr>
         {% endfor %}
         </tbody>
@@ -61,14 +66,10 @@
     <a href="/addGood?kind=jacket" type="button" class="btn btn-info" ">Add new jacket</a>
     <a href="/addGood?kind=plaid" type="button" class="btn btn-info" ">Add new plaid</a>
 
-<!--    <a href="/addGood/shoes" type="button" class="btn btn-info" ">Add new shoes</a>-->
-<!--    <a href="/addGood/jacket" type="button" class="btn btn-info" ">Add new jacket</a>-->
-<!--    <a href="/addGood/plaid" type="button" class="btn btn-info" ">Add new plaid</a>-->
-
-
     <a href="/catalogue" type="button" class="btn btn-primary">For uer catalog</a>
 </div>
 
+{{error}}
 
 </body>
 </html>

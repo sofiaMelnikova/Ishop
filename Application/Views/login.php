@@ -18,7 +18,7 @@
                      alt="">
                 <form action="http://127.0.0.1/login" class="form-signin" method="post">
 
-                    <input type="hidden" name="csrfToken" value="<?php if (!empty($csrfToken)): echo spCh($csrfToken); endif;?>">
+                    <input type="hidden" name="csrfToken" value="{{csrfToken}}">
 
                     <input type="text" class="form-control" name="login" placeholder="Email" required autofocus>
                     <input type="password" class="form-control" name="password" placeholder="Password" required>
@@ -27,7 +27,7 @@
                         <input type="checkbox" value="remember-me">
                         Remember me
                     </label>
-                    <a href="#" class="pull-right need-help">Need help? </a><span class="clearfix"></span>
+                    <a href="/restoringPassword" class="pull-right need-help">Forgot your password? </a><span class="clearfix"></span>
                 </form>
             </div>
             <a href="/registration" class="text-center new-account">Create an account </a>

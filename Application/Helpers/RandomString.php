@@ -10,7 +10,7 @@ class RandomString
      * @param string $symbols
      * @return string
      */
-    final public function get (int $length = 12, string $symbols = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ'):string {
+    public static function get (int $length = 12, string $symbols = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ'):string {
         $countSymbols = strlen($symbols);
         $result = '';
         for ($i = 0; $i < $length; $i++) {

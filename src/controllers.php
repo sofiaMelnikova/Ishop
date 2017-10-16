@@ -2,19 +2,7 @@
 
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
-use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\RedirectResponse;
-use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
-
-// $app = require __DIR__.'/../src/app.php';
-
-//Request::setTrustedProxies(array('127.0.0.1'));
-
-
-//$app->get('/', function () use ($app) {
-//    return $app['twig']->render('index.html.twig', array());
-//})
-//->bind('homepage');
 
 /**
  * @var \Silex\Application $app
@@ -24,15 +12,11 @@ $app->error(function (\Exception $e, Request $request, $code) use ($app) {
         return;
     }
 
-    // 404.html, or 40x.html, or 4xx.html, or error.html
     $templates = array(
-        'errors/'.$code.'.html.twig',
-        'errors/'.substr($code, 0, 2).'x.html.twig',
-        'errors/'.substr($code, 0, 1).'xx.html.twig',
-        'errors/default.html.twig',
+        'error.php'
     );
 
-    return new Response($app['twig']->resolveTemplate($templates)->render(array('code' => $code)), $code);
+    return new Response($app['twig']->render('error.php', array('exception' => $e, 'code' => $code)), $code);
 });
 
 
@@ -40,11 +24,23 @@ $app['session']->start();
 
 $app->get('/registration', 'registration.controller:renderRegistrationFormAction');
 
-$app->post('/registration', 'registration.controller:addUserAction');
+$app->post('/registration', 'registration.controller:addUserAction')
+    ->before(function () use ($app) {
+        $result = $app['rules']->isHaveCsrfToken();
+        if (!$result) {
+            return new RedirectResponse('/catalogue');
+        }
+    });
 
 $app->get('/login', 'login.controller:renderLoginFormActon');
 
-$app->post('/login', 'login.controller:userLoginAction');
+$app->post('/login', 'login.controller:userLoginAction')
+    ->before(function () use ($app) {
+        $result = $app['rules']->isHaveCsrfToken();
+        if (!$result) {
+            return new RedirectResponse('/catalogue');
+        }
+    });
 
 $app->get('/catalogue/{kind}/{page}', 'goods.controller:showCatalogAction')
     ->value('kind', 'shoes')
@@ -61,6 +57,12 @@ $app->get('/addGood', 'goodsAdmin.controller:showFormAddGood')
 $app->post('/addGood', 'goodsAdmin.controller:addGoodAction')
     ->before(function () use ($app) {
         $result = $app['rules']->isLoginAdmin();
+        if (!$result) {
+            return new RedirectResponse('/catalogue');
+        }
+    })
+    ->before(function () use ($app) {
+        $result = $app['rules']->isHaveCsrfToken();
         if (!$result) {
             return new RedirectResponse('/catalogue');
         }
@@ -83,6 +85,12 @@ $app->post('/deleteProduct', 'goodsAdmin.controller:deleteProductAction')
         if (!$result) {
             return new RedirectResponse('/catalogue');
         }
+    })
+    ->before(function () use ($app) {
+        $result = $app['rules']->isHaveCsrfToken();
+        if (!$result) {
+            return new RedirectResponse('/catalogue');
+        }
     });
 
 $app->get('/editProduct', 'goodsAdmin.controller:changeProductAction')
@@ -99,6 +107,12 @@ $app->post('/saveChangeProduct', 'goodsAdmin.controller:saveChangeProductAction'
         if (!$result) {
             return new RedirectResponse('/catalogue');
         }
+    })
+    ->before(function () use ($app) {
+        $result = $app['rules']->isHaveCsrfToken();
+        if (!$result) {
+            return new RedirectResponse('/catalogue');
+        }
     });
 
 $app->get('/takeToTheBasket', 'goods.controller:takeToTheBasketAction');
@@ -107,14 +121,59 @@ $app->get('/showBasket', 'goods.controller:showBasketAction');
 
 $app->get('/deleteProductFromBasket', 'goods.controller:deleteFormBasketAction');
 
-$app->post('/createOrder', 'goods.controller:createOrderAction');
+$app->post('/createOrder', 'goods.controller:createOrderAction')
+    ->before(function () use ($app) {
+        $result = $app['rules']->isHaveCsrfToken();
+        if (!$result) {
+            return new RedirectResponse('/catalogue');
+        }
+    });
 
-$app->get('/logout', 'login.controller:logoutAction');
+$app->post('/logout', 'login.controller:logoutAction')
+    ->before(function () use ($app) {
+        $result = $app['rules']->isHaveCsrfToken();
+        if (!$result) {
+            return new RedirectResponse('/catalogue');
+        }
+    });
 
 $app->get('/historyOfOrders', 'goods.controller:showHistoryAction');
 
-$app->get('/test', function () use ($app) {
-    (new \Application\Helpers\SavePhoto())->test();
+$app->get('/userProfile', 'userProfile.controller:showUserProfileAction')
+    ->before(function () use ($app) {
+        $result = $app['rules']->isLogin();
+        if (!$result) {
+            return new RedirectResponse('/catalogue');
+        }
+    });
 
-    return $app['twig']->render('addShoes.php');
+$app->post('/saveUserProfile', 'userProfile.controller:saveUserProfileAction')
+    ->before(function () use ($app) {
+        $result = $app['rules']->isHaveCsrfToken();
+        if (!$result) {
+            return new RedirectResponse('/catalogue');
+        }
+    })
+    ->before(function () use ($app) {
+        $result = $app['rules']->isLogin();
+        if (!$result) {
+            return new RedirectResponse('/catalogue');
+        }
+    });
+
+$app->get('/restoringPassword', 'login.controller:showFormRestoringPasswordAction');
+
+$app->post('/restoringPassword', 'login.controller:restoringPasswordAction')
+    ->before(function () use ($app) {
+        $result = $app['rules']->isHaveCsrfToken();
+        if (!$result) {
+            return new RedirectResponse('/catalogue');
+        }
+    });
+
+$app->get('/test', function () use ($app) {
+    $result = $app['login.controller']->getProductsSortByPriseInLimit('shoes', 0, 2500, 1, 2);
+//    throw new Exception('test');
+    var_dump($result);
+    die();
 });

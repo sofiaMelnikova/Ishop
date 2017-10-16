@@ -44,6 +44,7 @@
         <input class="form-control" name="phone" placeholder="88003300303">
     </div>
     {% endif %}
+    <input type="hidden" name="csrfToken" value="{{csrfToken}}">
     <button href="/createOrder" type="submit" class="btn btn-success">Create order on {{resultSum}}$</button>
 </form>
 <a href="/catalogue" type="button" class="btn btn-primary">Catalogue</a>

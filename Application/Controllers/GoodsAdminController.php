@@ -17,13 +17,16 @@ class GoodsAdminController extends BaseControllerAbstract
      */
     public function showFormAddGood () {
         $kind = $this->request->query->get('kind');
-        return $this->render('add' . ucfirst($kind) . '.php');
+        $this->addCsrfToken();
+        return $this->render('add' . ucfirst($kind) . '.php', ['csrfToken' => self::$csrfToken]);
     }
 
     /**
      * @return Response
      */
     public function addGoodAction () {
+        $this->addCsrfToken();
+
         $kind = $this->request->request->get('kind');
         $validate = new Validate();
         $productFields = $this->app[$kind . '.fields'];
@@ -31,7 +34,8 @@ class GoodsAdminController extends BaseControllerAbstract
         $result = $validate->$methodValidate($this->app, $productFields->getAllFields());
 
         if (!empty($result)) {
-            return $this->render('add' . ucfirst($kind) . '.php', ['product' => $productFields->getAllFields(), 'error' => $result]);
+            return $this->render('add' . ucfirst($kind) . '.php', ['product' => $productFields->getAllFields(),
+                'error' => $result, 'csrfToken' => self::$csrfToken]);
         }
 
         $file = $this->request->files->get('photo');
@@ -41,7 +45,8 @@ class GoodsAdminController extends BaseControllerAbstract
             $errors = $validate->imageValidate($this->app, ['picture' => $file]);
 
             if (!empty($errors)) {
-                return $this->render('add' . ucfirst($kind) . '.php', ['product' => $productFields->getAllFields(), 'error' => $errors]);
+                return $this->render('add' . ucfirst($kind) . '.php', ['product' => $productFields->getAllFields(),
+                    'error' => $errors, 'csrfToken' => self::$csrfToken]);
             }
             $filePath = 'pictures/' . ($this->app['uploader.helper']->upload($file, '/home/smelnikova/dev/my_shop.dev/web/pictures'));
         }
@@ -56,7 +61,8 @@ class GoodsAdminController extends BaseControllerAbstract
      */
     public function showAdminGoodsAction (int $page) {
         $result = (new Pagination())->showCatalog($page, $this->productsOnPageAdmin, $this->showPagesAdmin, $this->app);
-        return $this->render('adminGoods.php', $result);
+        $this->addCsrfToken();
+        return $this->render('adminGoods.php', array_merge($result, ['csrfToken' => self::$csrfToken]));
     }
 
     /**
@@ -65,7 +71,9 @@ class GoodsAdminController extends BaseControllerAbstract
     public function changeProductAction () {
         $stokeId = intval($this->request->query->get('id'));
         $product = $this->app['good.model']->getAllOfProduct($stokeId);
-        return $this->render('add' . ucfirst($product['kinds_value']) . '.php', ['product' => $product, 'editProduct' => true]);
+        $this->addCsrfToken();
+        return $this->render('add' . ucfirst($product['kinds_value']) . '.php', ['product' => $product, 'editProduct' => true,
+                                                                                        'csrfToken' => self::$csrfToken]);
     }
 
     /**
@@ -81,6 +89,7 @@ class GoodsAdminController extends BaseControllerAbstract
      * @return Response
      */
     public function saveChangeProductAction () {
+        $this->addCsrfToken();
         $kind = $this->request->request->get('kind');
         $validate = new Validate();
 
@@ -89,11 +98,9 @@ class GoodsAdminController extends BaseControllerAbstract
         $result = $validate->$methodValidate($this->app, $productFields->getAllFields());
 
         if (!empty($result)) {
-
             $result = ['error' => $result,
                 'product' => $this->app['good.model']->getAllOfProduct(intval($productFields->getStokeId())),
-                'editProduct' => true];
-
+                'editProduct' => true, 'csrfToken' => self::$csrfToken];
             return $this->render('add' . ucfirst($kind) . '.php', $result);
         }
 
@@ -103,14 +110,16 @@ class GoodsAdminController extends BaseControllerAbstract
         if (!empty($file)) {
             $errors = $validate->imageValidate($this->app, ['picture' => $file]);
             if (!empty($errors)) {
-                return $this->render('add' . ucfirst($kind) . '.php', ['product' => $productFields->getAllFields(), 'error' => $errors]);
+                return $this->render('add' . ucfirst($kind) . '.php', ['product' => $productFields->getAllFields(),
+                    'error' => $errors, 'csrfToken' => self::$csrfToken]);
             }
             $filePath = 'pictures/' . ($this->app['uploader.helper']->upload($file, '/home/smelnikova/dev/my_shop.dev/web/pictures'));
         }
 
         $product = array_merge($productFields->getAllFields(), ['picture' => $filePath]);
         $this->app['good.model']->updateProduct($product, $productFields->getPropertiesKeys());
-        $result = ['product' => $this->app['good.model']->getAllOfProduct(intval($productFields->getStokeId())), 'editProduct' => true];
+        $result = ['product' => $this->app['good.model']->getAllOfProduct(intval($productFields->getStokeId())),
+                    'editProduct' => true, 'csrfToken' => self::$csrfToken];
         return $this->render('add' . ucfirst($kind) . '.php', $result);
     }
 

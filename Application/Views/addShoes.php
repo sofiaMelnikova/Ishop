@@ -19,11 +19,12 @@
             <input name="photo" type="file" class="form-control-file" id="exampleFormControlFile1">
         </div>
 {% else %}
-        <form enctype="multipart/form-data" action="http://127.0.0.1/addGood" method="post">
-            <div><img src="pictures/addPhoto.png"></div>
-            <input name="photo" type="file" />
+    <form enctype="multipart/form-data" action="http://127.0.0.1/addGood" method="post">
+        <div><img src="pictures/addPhoto.png"></div>
+        <input name="photo" type="file" />
 {% endif %}
 
+    <input type="hidden" name="csrfToken" value="{{csrfToken}}">
 
     <div class="form-group">
         <label class="mr-sm-2" for="inlineFormCustomSelect">You add Shoes</label>
@@ -88,6 +89,7 @@
 
 {% if editProduct is defined %}
     <form action="/deleteProduct" method="post" class="toInlineBlock">
+        <input type="hidden" name="csrfToken" value="{{csrfToken}}">
         <button type="submit" class="btn btn-danger" name="id" value="{{product.id}}">Delete</button>
     </form>
 

@@ -8,6 +8,13 @@ use Symfony\Component\HttpFoundation\Response;
 
 class BaseControllerAbstract
 {
+    // userProfile.php, adminGoods.php, addJacket.php, addPlaid.php, addShoes.php, login.php, registration.php (csrfToken)
+
+    /**
+     * @var string
+     */
+    public static $csrfToken;
+
     /**
      * @var Application
      */
@@ -38,6 +45,7 @@ class BaseControllerAbstract
         $this->twig = $app['twig'];
         $this->request = $request;
         $this->response = new Response();
+        self::$csrfToken = $this->app['RandomString.helper']->get();
     }
 
     /**
@@ -48,5 +56,10 @@ class BaseControllerAbstract
     protected function render(string $template,array $params = []) {
         $this->response->setContent($this->twig->render($template, $params));
         return $this->response;
+    }
+
+    public function addCsrfToken () {
+        $cookie = new \Symfony\Component\HttpFoundation\Cookie('csrfToken', self::$csrfToken, strtotime('now + 65 minutes'));
+        $this->response->headers->setCookie($cookie);
     }
 }

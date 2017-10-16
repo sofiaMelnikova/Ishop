@@ -99,12 +99,14 @@ class GoodModel extends BaseModel
     private function getContentForShowingBasket (array $basketProducts) {
         $resultSum = 0;
         $products = [];
+
         foreach ($basketProducts as $key => $value) {
             $product = $this->getAllOfProduct($key);
             $resultSum = $resultSum + $value['sum'];
             $product = array_merge($product, ['countInBasket' => $value['count'], 'sum' => $value['sum']]);
             array_push($products, $product);
         }
+
         return ['products' => $products,'resultSum' => $resultSum];
     }
 
@@ -113,7 +115,7 @@ class GoodModel extends BaseModel
      * @param int $numberOrder
      */
     public function executedOrderForLoginUser (int $numberOrder) {
-        $this->newGoods()->formBusketToExecuted($numberOrder);
+        $this->newOrders()->formBusketToExecuted($numberOrder);
     }
 
     /**
@@ -121,7 +123,8 @@ class GoodModel extends BaseModel
      * @param array $basket
      */
     public function executedOrderForLogoutUser (int $userId, array $basket) {
-        $this->newGoods()->createAndExecuteNewOrder($userId, $basket);
+//        $this->newGoods()->createAndExecuteNewOrder($userId, $basket);
+        $this->newOrders()->createAndExecuteNewOrder($userId, $basket);
     }
 
     /**
@@ -129,8 +132,13 @@ class GoodModel extends BaseModel
      * @return int
      */
     public function getNumberOrdesInBasketForUser (int $userId) {
-        $userId = $this->newGoods()->getNumberOrdesInBasketForUser($userId)['id'];
-        return intval($userId);
+        $numberOrder = $this->newOrders()->getNumberOrdesInBasketForUser($userId);
+
+        if (empty($numberOrder)) {
+            return 0;
+        }
+
+        return intval($numberOrder['id']);
     }
 
     /**
@@ -141,9 +149,11 @@ class GoodModel extends BaseModel
         if (!key_exists('products', ($request->cookies->all()))) {;
             return 0;
         }
+
         $products = ($request->cookies->all())['products'];
         $products = json_decode($products, true);
         $count = 0;
+
         foreach ($products as $value) {
             $count = ++$count;
         }
@@ -155,9 +165,14 @@ class GoodModel extends BaseModel
      * @return int
      */
     public function countProductsInBasketForLoginUser (int $userId) {
-        $goods = $this->newGoods();
         $numberOrder = $this->getNumberOrdesInBasketForUser($userId);
-        $countProducts = $goods->getCountProductsInBasket($numberOrder);
+
+        if (empty($numberOrder)) {
+            return 0;
+        }
+
+        $countProducts = $this->newOrders()->getCountProductsInBasket($numberOrder);
+
         return intval($countProducts['COUNT(*)']);
     }
 
@@ -166,12 +181,15 @@ class GoodModel extends BaseModel
      * @param array $product
      */
     public function addProductInBasketForLoginUser (int $userId, array $product) {
-        $goods = $this->newGoods();
         $numberOrder = $this->getNumberOrdesInBasketForUser($userId);
+
         if (empty($numberOrder)) {
-            $goods->createNewOrder($userId, $product);
+//            $this->newGoods()->createNewOrder($userId, $product);
+            $this->newOrders()->createNewOrder($userId, $product);
+
+        } else {
+            $this->newOrders()->addToOrderBasketProduct($numberOrder, $product);
         }
-        $goods->addToOrderBasketProduct($numberOrder, $product);
     }
 
     /**
@@ -183,9 +201,11 @@ class GoodModel extends BaseModel
     public function addProductInBasketForLogoutUser (Response $response, Request $request, array $product) {
         $products = [];
         $cookie = $request->cookies->all();
+
         if (key_exists('products', $cookie)) {
             $products = json_decode($cookie['products'], true);
         }
+
         array_push($products, ['cost' => $product['cost'], 'id' => $product['id']]);
         $cookie = new Cookie('products', json_encode($products));
         $response->headers->setCookie($cookie);
@@ -202,13 +222,16 @@ class GoodModel extends BaseModel
         if (!key_exists('products', ($request->cookies->all()))) {
             return [];
         }
+
         if (!$forShowBasket) {
             $products = ($request->cookies->all())['products'];
             return json_decode($products, true);
         }
+
         $products = ($request->cookies->all())['products'];
         $products = json_decode($products, true);
         $result = [];
+
         foreach ($products as $key => $value) {
             if (array_key_exists($value['id'], $result)) {
                 ++$result[$value['id']]['count'];
@@ -217,6 +240,7 @@ class GoodModel extends BaseModel
                 $result[$value['id']] = ['count' => 1, 'sum' => $value['cost']];
             }
         }
+
         return $result;
     }
 
@@ -225,16 +249,20 @@ class GoodModel extends BaseModel
      * @return array|mixed
      */
     public function getProductsFromBasketForLoginUser (int $userId) {
-        $goods = $this->newGoods();
         $numberOrder = $this->getNumberOrdesInBasketForUser($userId);
+
         if (empty($numberOrder)) {
             return [];
         }
-        $products = $goods->getProductsFromBasket($numberOrder);
+
+        $products = $this->newOrders()->getProductsFromBasket($numberOrder);
+
         if (empty($products)) {
             return [];
         }
+
         $result = [];
+
         foreach ($products as $key => $value) {
             if (array_key_exists($value['stoke_id'], $result)) {
                 ++$result[$value['stoke_id']]['count'];
@@ -243,6 +271,7 @@ class GoodModel extends BaseModel
                 $result[$value['stoke_id']] = ['count' => 1, 'sum' => $value['actual_cost']];
             }
         }
+
         return $result;
     }
 
@@ -258,8 +287,10 @@ class GoodModel extends BaseModel
             $response->headers->clearCookie('products');
             return $response;
         }
+
         $products = ($request->cookies->all())['products'];
         $products = json_decode($products, true);
+
         foreach ($products as $key => $value) {
             if ($value['id'] == $stokeId) {
                 unset($products[$key]);
@@ -275,9 +306,8 @@ class GoodModel extends BaseModel
      * @param int|null $stokeId
      */
     public function deleteProductFromBasketForLoginUser (int $userId, int $stokeId = null) {
-        $goods = $this->newGoods();
         $numberOrder = $this->getNumberOrdesInBasketForUser($userId);
-        $goods->deleteFromBasket($numberOrder, $stokeId);
+        $this->newOrders()->deleteFromBasket($numberOrder, $stokeId);
     }
 
     /**
@@ -286,17 +316,21 @@ class GoodModel extends BaseModel
      */
     public function getFieldsByKindForAddForm (string $kind) {
         $properties = null;
+
         if ($kind === 'shoes') {
             $properties = ['size' => ['min' => 36, 'max' => 46], 'brand' => true, 'gender' => true, 'color' => true,
                 'material' => true, 'producer' => true, 'kind' => 'shoes'];
         }
+
         if ($kind === 'jacket') {
             $properties = ['size' => ['min' => 38, 'max' => 56], 'brand' => true, 'gender' =>true, 'color' => true,
                 'material' => true, 'producer' => true, 'kind' => 'jacket'];
         }
+
         if ($kind === 'plaid') {
             $properties = ['length' => true, 'width' => true, 'color' => true, 'material' => true, 'producer' => true, 'kind' => 'plaid'];
         }
+
         return $properties;
     }
 
@@ -305,7 +339,7 @@ class GoodModel extends BaseModel
      * @return array|mixed
      */
     public function getInfoForHistoryOrdersByUserId (int $userId) {
-        return $this->newGoods()->getInfoForHistoryOrdersByUserId($userId);
+        return $this->newOrders()->getInfoForHistoryOrdersByUserId($userId);
     }
 
     /**
@@ -314,13 +348,17 @@ class GoodModel extends BaseModel
      */
     public function getHistoryForLogoutUser (string $phoneNumber) {
         $userId = $this->newRegistrationModel()->getUserByPhone($phoneNumber);
+
         if (!$userId) {
             return ['error' => 'You have not orders.'];
         }
+
         $orders = $this->getInfoForHistoryOrdersByUserId($userId);
+
         if (empty($orders)) {
             return ['error' => 'You have not orders.'];
         }
+
         return ['products' => $orders];
     }
 
@@ -330,5 +368,78 @@ class GoodModel extends BaseModel
      */
     public function getHistoryForLoginUser (int $userId) {
         return ['products' => $this->getInfoForHistoryOrdersByUserId($userId)];
+    }
+
+    /**
+     * @param array $filters
+     * @return array
+     */
+    // ['namePropertyInBD' => ['value' => ['min' => , 'max' => ]/'value', 'type' => ]]
+    private function getShoesSortByFilter (array $filters) {
+        return ['cost' => ['value' => ['min' => trim($filters['minCost']), 'max' => trim($filters['maxCost'])], 'type' => \PDO::PARAM_INT],
+            'brand' => ['value' => trim($filters['brand']), 'type' => \PDO::PARAM_STR],
+            'color' => ['value' => trim($filters['color']), 'type' => \PDO::PARAM_STR],
+            'size' => ['value' => trim($filters['size']), 'type' => \PDO::PARAM_INT],
+            'gender' => ['value' => trim($filters['gender']), 'type' => \PDO::PARAM_STR]];
+    }
+
+    /**
+     * @param array $filters
+     * @return array
+     */
+    private function getJacketSortByFilter (array $filters) {
+        return ['cost' => ['value' => ['min' => trim($filters['minCost']), 'max' => trim($filters['maxCost'])], 'type' => \PDO::PARAM_INT],
+            'brand' => ['value' => trim($filters['brand']), 'type' => \PDO::PARAM_STR],
+            'color' => ['value' => trim($filters['color']), 'type' => \PDO::PARAM_STR],
+            'size' => ['value' => trim($filters['size']), 'type' => \PDO::PARAM_INT],
+            'gender' => ['value' => trim($filters['gender']), 'type' => \PDO::PARAM_STR]];
+
+    }
+
+    /**
+     * @param array $filters
+     * @return array
+     */
+    private function getPlaidSortByFilter (array $filters) {
+        return ['cost' => ['value' => ['min' => trim($filters['minCost']), 'max' => trim($filters['maxCost'])], 'type' => \PDO::PARAM_INT],
+            'brand' => ['value' => trim($filters['brand']), 'type' => \PDO::PARAM_STR],
+            'length' => ['value' => ['min' => trim($filters['minLength']), 'max' => trim($filters['maxLength'])], 'type' => \PDO::PARAM_INT],
+            'width' => ['value' => ['min' => trim($filters['minWidth']), 'max' => trim($filters['maxWidth'])], 'type' => \PDO::PARAM_INT]];
+    }
+
+    /**
+     * @param string $kind
+     * @param array $filters
+     * @return int
+     */
+    public function getCountProductsByFilter (string $kind, array $filters) {
+        $methodName = 'get' . ucfirst($kind) . 'SortByFilter';
+        return intval($this->newFilters()->getCountProductsByFilters($kind, $this->$methodName($filters))['COUNT(*)']);
+    }
+
+    /**
+     * @param string $kind
+     * @param array $filters
+     * @param int $startElement
+     * @param int $countElements
+     * @return array
+     */
+    public function getProductsByFilerInLimit (string $kind, array $filters, int $startElement, int $countElements) {
+        $methodName = 'get' . ucfirst($kind) . 'SortByFilter';
+        return $this->newFilters()->getProductsByFiltersInLimit($kind, $this->$methodName($filters), $startElement, $countElements);
+    }
+
+    /**
+     * @param array $elements
+     * @return bool
+     */
+    public function isEmptyAllElementsInArray (array $elements) {
+        $result = true;
+
+        foreach ($elements as $value) {
+            $result = (empty($value)) ? $result : false;
+        }
+
+        return $result;
     }
 }

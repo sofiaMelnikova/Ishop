@@ -14,13 +14,8 @@ $app->register(new TwigServiceProvider());
 $app->register(new HttpFragmentServiceProvider());
 $app->register(new Silex\Provider\SessionServiceProvider());
 $app->register(new Silex\Provider\ValidatorServiceProvider());
-//$app['twig'] = $app->extend('twig', function ($twig, $app) {
-//    // add custom globals, filters, tags, ...
-//
-//    return $twig;
-//});
 
-//$app->register(new \Silex\Provider\TwigServiceProvider(), ['twig.path' => __DIR__ . '/../Application/Views']);
+$token = (new \Application\Helpers\RandomString())->get();
 
 $app['registration.controller'] = function () use ($app, $request) {
 
@@ -39,6 +34,10 @@ $app['goodsAdmin.controller'] = function () use ($app, $request) {
     return new \Application\Controllers\GoodsAdminController($app, $request);
 };
 
+$app['userProfile.controller'] = function () use ($app, $request) {
+    return new \Application\Controllers\UserProfileController($app, $request);
+};
+
 $app['good.model'] = function () use ($app) {
     return new \Application\Models\GoodModel($app);
 };
@@ -49,6 +48,10 @@ $app['login.model'] = function () use ($app) {
 
 $app['registration.model'] = function () use ($app) {
     return new \Application\Models\RegistrationModel($app);
+};
+
+$app['userProfile.model'] = function () use ($app) {
+    return new \Application\Models\UserProfileModel($app);
 };
 
 $app['RandomString.helper'] = function () {
@@ -75,8 +78,8 @@ $app['plaid.fields'] = function () use ($request) {
   return new \Application\ValueObject\PlaidFields($request);
 };
 
-$app['DbQuery'] = function () {
-  return new \Engine\DbQuery('Ishop', '127.0.0.1', 'root', 'qwerty133');
+$app['DbQuery'] = function () use ($app) {
+  return new \Engine\DbQuery('Ishop', '127.0.0.1', 'root', 'qwerty133', $app);
 };
 
 return $app;

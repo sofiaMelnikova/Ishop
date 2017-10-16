@@ -1,19 +1,20 @@
 <?php
-/**
- * Created by PhpStorm.
- * User: smelnikova
- * Date: 18.08.17
- * Time: 14:05
- */
-
 namespace Engine;
+
+use Silex\Application;
 
 class DbQuery
 {
     /**
      * @var \PDO
      */
-    private $dbh;
+    private $connection;
+
+    /**
+     * @var Application
+     */
+    private $app;
+
 
     /**
      * DbQuery constructor.
@@ -21,18 +22,20 @@ class DbQuery
      * @param string $host
      * @param string $user
      * @param string $password
+     * @param Application $app
      */
-    public function __construct(string $dbName, string $host = '127.0.0.1', string $user, string $password) {
-        $this->dbh = new \PDO('mysql:dbname=' . $dbName . ';host=' . $host, $user, $password);
-        $this->dbh->setAttribute(\PDO::ATTR_DEFAULT_FETCH_MODE, \PDO::FETCH_ASSOC);
-        $this->dbh->setAttribute(\PDO::ATTR_ERRMODE, \PDO::ERRMODE_EXCEPTION);
+    public function __construct(string $dbName, string $host = '127.0.0.1', string $user, string $password, Application $app) {
+        $this->connection = new \PDO('mysql:dbname=' . $dbName . ';host=' . $host, $user, $password);
+        $this->connection->setAttribute(\PDO::ATTR_DEFAULT_FETCH_MODE, \PDO::FETCH_ASSOC);
+        $this->connection->setAttribute(\PDO::ATTR_ERRMODE, \PDO::ERRMODE_EXCEPTION);
+        $this->app = $app;
     }
 
     /**
      * @return \PDO
      */
     public function getConnection () {
-        return $this->dbh;
+        return $this->connection;
     }
 
     /**
@@ -42,7 +45,7 @@ class DbQuery
      * @return array
      */
     public function select (string $query, array $params = [], bool $fetchAll = true):array {
-        $sth = $this->dbh->prepare($query);
+        $sth = $this->connection->prepare($query);
 
         $sth = $this->execute($sth, $params);
 
@@ -61,11 +64,11 @@ class DbQuery
      * @return int
      */
     public function update (string $query, array $params = []) {
-        $sth = $this->dbh->prepare($query);
+        $sth = $this->connection->prepare($query);
 
         $sth = $this->execute($sth, $params);
-
         $sth->execute();
+
         return $sth->rowCount();
     }
 
@@ -75,7 +78,7 @@ class DbQuery
      * @return int
      */
     public function delete (string $query, array $params = []) {
-        $sth = $this->dbh->prepare($query);
+        $sth = $this->connection->prepare($query);
 
         $sth = $this->execute($sth, $params);
 
@@ -89,21 +92,19 @@ class DbQuery
      * @return int
      */
     public function insert (string $query, array $params = []):int {
-        $sth = $this->dbh->prepare($query);
+        $sth = $this->connection->prepare($query);
 
         $result = $this->execute($sth, $params)->execute();
 
-        if (!$result) {
-            return 0;
-        }
+        return (!$result) ? 0 : intval($this->connection->lastInsertId());
 
-        return intval($this->dbh->lastInsertId());
     }
 
     /**
      * @param \PDOStatement $sth
      * @param array $params
      * @return \PDOStatement
+     * @throws \Exception
      */
     private function execute (\PDOStatement $sth, array $params) {
         if (empty($params)) {
@@ -111,12 +112,20 @@ class DbQuery
         }
 
         foreach ($params as $key => $value) {
-            if (!empty($value['value'])) {
-                $value['type'] = (empty($value['type'])) ? (\PDO::PARAM_STR) : $value['type'];
-                $sth->bindValue($key, $value['value'], $value['type']);
+            if (empty($value['type'])) {
+                $value['type'] = \PDO::PARAM_STR;
+            } elseif (!$this->isTypeValid($value['type'])) {
+                throw new \Exception("Type variable must be one of there are: \PDO::PARAM_NULL, \PDO::PARAM_INT, \PDO::PARAM_STR, \PDO::PARAM_LOB, \PDO::PARAM_STMT or empty.");
             }
+
+            $sth->bindValue($key, $value['value'], $value['type']);
         }
 
         return $sth;
+    }
+
+    private function isTypeValid(string $type):bool {
+        $types = [\PDO::PARAM_NULL, \PDO::PARAM_INT, \PDO::PARAM_STR, \PDO::PARAM_LOB, \PDO::PARAM_STMT];
+        return in_array($type, $types);
     }
 }

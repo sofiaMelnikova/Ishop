@@ -17,15 +17,13 @@ class Uploader
      * @param UploadedFile $file
      * @param string $uploadDir
      * @return string
+     * @throws \Exception
      */
     public function upload (UploadedFile $file, string $uploadDir) {
-        if (!is_dir($uploadDir)) {
-            $uploadDir = '/home/smelnikova/Downloads';
+        if (!is_writable($uploadDir)) {
+            throw new \Exception('Incorrect direction for download file.');
         }
-        $chmod = substr(sprintf('%o', fileperms('/home/smelnikova/Downloads')), -4);
-        if ($chmod < 0755) {
-            $uploadDir = '/home/smelnikova/Downloads';
-        }
+
         $fileName = $this->createUniqueName($file->getClientOriginalName());
         $file->move($uploadDir, $fileName);
         return $fileName;
@@ -36,7 +34,7 @@ class Uploader
      * @return string
      */
     private function createUniqueName (string $originalName):string {
-        $newName = $originalName . (new RandomString())->get();
+        $newName = $originalName . (new RandomString())::get();
         return md5($newName);
     }
 }

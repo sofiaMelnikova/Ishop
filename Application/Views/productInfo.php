@@ -12,14 +12,14 @@
     <div class="bs-example" data-example-id="contextual-panels">
         <div><img class="photoProduct" src="{{product.picture}}"></div>
 
-        <div class="panel panel-primary">
+        <div class="panel panel-info">
             <div class="panel-heading">
                 <h3 class="panel-title">Product`s name</h3>
             </div>
             <div class="panel-body">{{product.product_name}}</div>
         </div>
 
-        <div class="panel panel-primary">
+        <div class="panel panel-info">
             <div class="panel-heading">
                 <h3 class="panel-title">Kind</h3>
             </div>
@@ -27,7 +27,7 @@
         </div>
 
         {% if product.gender %}
-        <div class="panel panel-primary">
+        <div class="panel panel-info">
             <div class="panel-heading">
                 <h3 class="panel-title">Gender</h3>
             </div>
@@ -36,7 +36,7 @@
         {% endif %}
 
         {% if product.brand %}
-        <div class="panel panel-primary">
+        <div class="panel panel-info">
             <div class="panel-heading">
                 <h3 class="panel-title">Gender</h3>
             </div>
@@ -45,7 +45,7 @@
         {% endif %}
 
         {% if product.color %}
-        <div class="panel panel-primary">
+        <div class="panel panel-info">
             <div class="panel-heading">
                 <h3 class="panel-title">Color</h3>
             </div>
@@ -54,7 +54,7 @@
         {% endif %}
 
         {% if product.material %}
-        <div class="panel panel-primary">
+        <div class="panel panel-info">
             <div class="panel-heading">
                 <h3 class="panel-title">Material</h3>
             </div>
@@ -63,7 +63,7 @@
         {% endif %}
 
         {% if product.length %}
-        <div class="panel panel-primary">
+        <div class="panel panel-info">
             <div class="panel-heading">
                 <h3 class="panel-title">Material</h3>
             </div>
@@ -72,7 +72,7 @@
         {% endif %}
 
         {% if product.width %}
-        <div class="panel panel-primary">
+        <div class="panel panel-info">
             <div class="panel-heading">
                 <h3 class="panel-title">Material</h3>
             </div>
@@ -81,7 +81,7 @@
         {% endif %}
 
         {% if product.size %}
-        <div class="panel panel-primary">
+        <div class="panel panel-info">
             <div class="panel-heading">
                 <h3 class="panel-title">Size</h3>
             </div>
@@ -90,7 +90,7 @@
         {% endif %}
 
         {% if product.producer %}
-        <div class="panel panel-primary">
+        <div class="panel panel-info">
             <div class="panel-heading">
                 <h3 class="panel-title">Size</h3>
             </div>
@@ -98,20 +98,20 @@
         </div>
         {% endif %}
 
-        <div class="panel panel-primary">
+        <div class="panel panel-info">
             <div class="panel-heading">
                 <h3 class="panel-title">Count</h3>
             </div>
             <div class="panel-body">{{product.count}}</div>
         </div>
 
-        <div class="panel panel-primary">
+        <div class="panel panel-info">
             <div class="panel-heading">
                 <h3 class="panel-title">Price</h3>
             </div>
             <div class="panel-body">{{product.cost}}</div>
         </div>
-        <a href="/catalogue" type="button" class="btn btn-primary">For uer catalog</a>
+        <a href="/catalogue" type="button" class="btn btn-info">For uer catalog</a>
     </div>
 </body>
 </html>

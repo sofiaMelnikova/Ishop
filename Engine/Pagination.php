@@ -87,11 +87,14 @@ class Pagination
      * @param Application $app
      * @param Request|null $request
      * @param string|null $kind
+     * @param array $filters
      * @return array
      */
-    public function showCatalog (int $page, int $productsOnPage, int $showPages, Application $app, Request $request = null, string $kind = null) {
+    public function showCatalog (int $page, int $productsOnPage, int $showPages, Application $app, Request $request = null, string $kind = null, array $filters = []) {
         $goodModel = new GoodModel($app);
-        $countProducts = $goodModel->getCountProducts($kind);
+
+        $countProducts = ($goodModel->isEmptyAllElementsInArray($filters)) ? $goodModel->getCountProducts($kind) : $goodModel->getCountProductsByFilter($kind, $filters);
+
         $countPages = $this->getCountPagesOrGroups($countProducts, $productsOnPage);
 
         if ($page > $countPages) {
@@ -106,7 +109,8 @@ class Pagination
             return ['products' => $products, 'pages' => $pagesMinMax, 'sumPages' => $countPages];
         }
 
-        $products = $goodModel->getNamePicturePriceOfKind($kind, $productsMinMax['min'], $productsOnPage);
+        $products = ($goodModel->isEmptyAllElementsInArray($filters)) ? $goodModel->getNamePicturePriceOfKind($kind, $productsMinMax['min'], $productsOnPage) : $goodModel->getProductsByFilerInLimit($kind, $filters, $productsMinMax['min'], $productsOnPage);
+
         $loginModel = new LoginModel($app);
         $id = $loginModel->isUserLogin($request);
         $admin = false;

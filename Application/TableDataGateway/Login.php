@@ -81,4 +81,7 @@ class Login
         $this->dataBase->update($query, $params);
     }
 
+    public function restoringPassword () {
+
+    }
 }

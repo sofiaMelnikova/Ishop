@@ -9,7 +9,10 @@
 namespace Application\Validate;
 
 use Application\Models\RegistrationModel;
+use Application\Models\UserProfileModel;
+use \Symfony\Component\HttpFoundation\Request;
 use Silex\Application;
+
 use Symfony\Component\Validator\Constraints as Assert;
 
 class Validate
@@ -17,18 +20,57 @@ class Validate
 
     /**
      * @param Application $app
+     * @param Request $request
+     * @param array $values
+     * @return array
+     */
+    public function userProfileFormValidate (Application $app, Request $request, array $values) {
+        $registrationModel = new RegistrationModel($app);
+        $userId = $registrationModel->getUserByPhone($values['phone']);
+        $isUserExist = $registrationModel->isLoginExist($values['login']);
+        $errors = [];
+
+        $user = $app['userProfile.model']->getUserIdAvatarFioPhoneLoginByToken(($request->cookies->all())['user']);
+
+        if (!empty($userId) && ($values['phone'] != $user['phone'])) {
+            array_push($errors, "This phone already exist");
+        }
+
+        if ($isUserExist && ($values['login'] != $user['login'])) {
+            array_push($errors, 'User already exist with this login.');
+        }
+
+        $constraint = new Assert\Collection(['id' => new Assert\Type(['type' => 'numeric']),
+            'login' => $this->forLogin(),
+            'phone' => $this->forPhone(),
+            'fio' => $this->forFio()]);
+        $err = $app['validator']->validate($values, $constraint);
+
+        if (count($err) > 0) {
+            foreach ($err as $error) {
+                array_push($errors, $error->getPropertyPath() . ' ' . $error->getMessage());
+            }
+        }
+
+        return $errors;
+    }
+
+    /**
+     * @param Application $app
      * @param array $values
      * @return array
      */
     public function registrationFormValidate (Application $app, array $values) {
-        $registrationModel = new RegistrationModel();
+        $registrationModel = new RegistrationModel($app);
         $isUserExist = $registrationModel->isLoginExist($values['email']);
         $err = [];
+
         if ($isUserExist) {
             array_push($err, 'User already exist with this login.');
         }
 
-        $userId = $registrationModel->isPhoneExist($values['phone']);
+        $userId = $registrationModel->getRegistretedUserByPhone($values['phone']);
+
         if ($userId) {
             array_push($err, 'Phone already exist.');
         }
@@ -38,12 +80,28 @@ class Validate
 
 
         $errors = $app['validator']->validate($values, $constraint);
+
         if (count($errors) > 0) {
             foreach ($errors as $error) {
                 array_push($err, $error->getPropertyPath() . ' ' . $error->getMessage());
             }
         }
+
         return $err;
+    }
+
+    /**
+     * @return array
+     */
+    private function forFio () {
+        return [new Assert\Type(['type' => 'string'])];
+    }
+
+    /**
+     * @return array
+     */
+    private function forLogin () {
+        return [new Assert\Type(['type' => 'string']), new Assert\NotNull(['message' => 'Error: producer is empty.'])];
     }
 
     /**
@@ -55,11 +113,13 @@ class Validate
         $constraint = new Assert\Collection(['phone' => $this->forPhone()]);
         $errors = $app['validator']->validate($phone, $constraint);
         $err = [];
+
         if (count($errors) > 0) {
             foreach ($errors as $error) {
                 array_push($err, $error->getPropertyPath() . ' ' . $error->getMessage());
             }
         }
+
         return $err;
     }
 

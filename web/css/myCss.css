@@ -109,3 +109,21 @@
 {
     display: inline-block;
 }
+.forAvatar
+{
+    max-width: 100px;
+    max-height: 140px;
+}
+.forCostFilter
+{
+    max-width: 150px;
+    margin-left: 50px;
+}
+.forCostFilterField
+{
+    margin-bottom: 10px;
+}
+.blockToInlineBlock
+{
+    display: inline-block;
+}

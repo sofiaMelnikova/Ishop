@@ -23,4 +23,23 @@ class Rules extends BaseControllerAbstract
         }
         return true;
     }
+
+    /**
+     * @return bool
+     */
+    public function isHaveCsrfToken () {
+        if ($this->request->cookies->all()['csrfToken'] === $this->request->request->get('csrfToken')) {
+            return true;
+        }
+
+        return false;
+    }
+
+    /**
+     * @return bool
+     */
+    public function isLogin () :bool {
+        $userId = $this->app['login.model']->isUserLogin($this->request);
+        return (!$userId) ? false : true ;
+    }
 }

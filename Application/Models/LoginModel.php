@@ -96,8 +96,7 @@ class LoginModel extends BaseModel
     public function createTokenForUser () {
         $time = 1;
         while ($time <= 3) {
-            $randomString = new RandomString();
-            $randomString = $randomString->get();
+            $randomString = (new RandomString())::get();
             if (!($this->newLogin()->getUserIdByToken($randomString))) {
                 return $randomString;
             }
@@ -133,5 +132,9 @@ class LoginModel extends BaseModel
         $token = $this->createTokenForUser();
         $this->addTokenForUser($token, $endTime, $userId);
         return $this->createLoginCookie($token, $response);
+    }
+
+    public function restoringPassword (string $email) {
+
     }
 }

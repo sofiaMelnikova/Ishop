@@ -37,11 +37,35 @@ class RegistrationModel extends BaseModel
      * @return int
      */
     public function getUserByPhone (string $phoneNumber):int {
-        $userId = $this->newRegistration()->getUserByPhone($phoneNumber)['id'];
+        $userId = $this->newRegistration()->getUserByPhone($phoneNumber);
         if (empty($userId)) {
             return 0;
         }
-        return intval($userId);
+        return intval($userId['id']);
+    }
+
+    /**
+     * @param string $phoneNumber
+     * @return int
+     */
+    public function getUnregisteredUserByPhone (string $phoneNumber) {
+        $userId = $this->newRegistration()->getUnregisteredUserByPhone($phoneNumber);
+        if (empty($userId)) {
+            return 0;
+        }
+        return intval($userId['id']);
+    }
+
+    /**
+     * @param string $phoneNumber
+     * @return int
+     */
+    public function getRegistretedUserByPhone (string $phoneNumber) {
+        $userId = $this->newRegistration()->getRegistretedUserByPhone($phoneNumber);
+        if (empty($userId)) {
+            return 0;
+        }
+        return intval($userId['id']);
     }
 
     /**
@@ -71,6 +95,12 @@ class RegistrationModel extends BaseModel
         return $this->addNewUserByPhone($phoneNumber);
     }
 
-
+    /**
+     * @param array $user
+     * @return mixed
+     */
+    public function updateLoginPasswordPhone (array $user) {
+        return $this->newRegistration()->updateLoginPasswordPhone($user);
+    }
 
 }
